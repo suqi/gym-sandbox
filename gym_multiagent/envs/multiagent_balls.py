@@ -8,7 +8,9 @@ from gym_multiagent.envs.plot import balls_game_dashboard
 
 class MABallsEnv(gym.Env):
     """A very simple balls game to demo MA algo
-    Attention: in multi agent env, all function should return a list of actions/states/rewards
+    Attention:
+    1. in multi agent env, all function should return a list of actions/states/rewards
+    2. the env has a fully observable internal state, while agent only has a partially observable state
     """
     metadata = {'render.modes': ['human', 'rgb_array']}
 
@@ -23,33 +25,26 @@ class MABallsEnv(gym.Env):
         "thief": {"speed": 15},
     }
 
-    def __init__(self):
+    def __init__(self,  agent_num=5, agent_team="police", adversary_num=2, map_size=200):
+        """the init params should be passed in by code of env registering """
         self.game_dashboard = None
+
+        self.map_size = map_size
+        self.adversary_team = "thief" if agent_team == 'police' else 'police'
+        self.agent_num = agent_num
+        self.agent_team = agent_team
+        self.adversary_num = adversary_num
+        self.team_size = {
+            self.agent_team: agent_num,
+            self.adversary_team: adversary_num
+        }
 
         self.episode_count = 0
         self.round_count = 0
         self.last_state = None
         self.current_state = None
         self.current_action = None
-
         self.reward_hist = []
-
-    def init_params(self, agent_num=5, agent_team="police", adversary_num=2, map_size=200, show_dashboard=True):
-        """You can be in police/thief team (警察抓小偷)
-        为了简化， 先用正方形即可， 因为跟长方形没有区别
-        """
-        self.map_size = map_size
-        self.adversary_team = "thief" if agent_team =='police' else 'police'
-        self.agent_num = agent_num
-        self.agent_team = agent_team
-        self.adversary_num = adversary_num
-
-        self.team_size = {
-            self.agent_team: agent_num,
-            self.adversary_team: adversary_num
-        }
-
-        self.game_dashboard = balls_game_dashboard.BallsGameDashboard(map_size, self.team_size) if show_dashboard else None
 
         # observation will be a list of agent_num
         # self.observation_space = gym.spaces.Box(
@@ -57,6 +52,14 @@ class MABallsEnv(gym.Env):
         #
         # # {move_up, move_right, move_left, move_down,}
         # self.action_space = gym.spaces.Discrete(self.ACTION_DIM)
+
+    def init_params(self, show_dashboard=True):
+        """You can be in police/thief team (警察抓小偷)
+        为了简化， 先用正方形即可， 因为跟长方形没有区别
+        """
+        self.game_dashboard = balls_game_dashboard.BallsGameDashboard(
+            self.map_size, self.team_size) if show_dashboard else None
+
 
     # def _trans_state(self, state):
     #     result = list()
