@@ -8,7 +8,14 @@ setup(
     author='Matt Su',
     author_email='deqi.su@gmail.com',
     license='MIT License',
-    packages=find_packages(),
+    packages=['gym_multiagent'],  #find_packages(),
     zip_safe=False,
     install_requires=['gym>=0.8.0', 'bokeh>=0.12'],
+    classifiers=[
+        'Development Status :: 4 - Beta',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: Apache Software License',
+        'Programming Language :: Python :: 3.5',
+        'Topic :: Software Development :: Libraries :: Python Modules'
+    ]
 )
