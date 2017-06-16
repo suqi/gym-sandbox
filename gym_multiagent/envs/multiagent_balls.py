@@ -20,6 +20,8 @@ class MABallsEnv(gym.Env):
     MAX_DIST = 800
     MAX_ROUND_COUNT = 200
 
+    MIN_CATCH_DIST = 20
+
     TEAMS = {
         "police": {"speed": 5},
         "thief": {"speed": 15},
@@ -74,43 +76,27 @@ class MABallsEnv(gym.Env):
     #         result.extend([0, 0, 0, 0, 0, 0])
     #     return np.array(result)
 
-    def _cal_reward(self):
-        return 0
-        # if not self.current_state.npc:
-        #     reward = self.WIN_REWARD
-        # elif not self.current_state.player.base.hp:
-        #     reward = self.LOSE_REWARD
+    def _cal_reward(self, is_thief_caught):
+        reward = 0
+
+        if is_thief_caught:
+            reward = self.WIN_REWARD
         # else:
-        #     current_dist = self._cal_dist()
-        #     current_dist_reward = current_dist * self.DIST_REWARD_WEIGHT
-        #
-        #     me_hp = self.current_state.player.base.hp - self.last_state.player.base.hp
-        #     me_hp_reward = me_hp * self.ME_HP_REWARD_WEIGHT
-        #
-        #     target_hp = self.last_state.npc[0].hp - self.current_state.npc[0].hp
-        #     target_hp_reward = target_hp * self.TARGET_HP_REWARD_WEIGHT
-        #
-        #     reward = current_dist_reward + me_hp_reward + target_hp_reward + self.ROUND_REWARD_WEIGHT
-        #
-        # self.reward_hist.append(reward)
-        # return reward
+        #     reward = self.LOSE_REWARD
+
+        self.reward_hist.append(reward)
+
+        return reward
 
     def _cal_dist(self):
         x_dist = self.current_state.player.base.x - self.current_state.npc[0].x
         y_dist = self.current_state.player.base.y - self.current_state.npc[0].y
         return np.sqrt(np.square(x_dist) + np.square(y_dist))
 
-    def _cal_done(self, state):
-        # if state.player and state.player.base and (not state.player.base.hp):
-        #     return True
-        #
-        # if not state.npc:
-        #     return True
-        #
-        # is_exceed_max_round = self.round_count > self.MAX_ROUND_COUNT
-        # is_exceed_max_dist = self._cal_dist() > self.MAX_DIST
-        # if is_exceed_max_round or is_exceed_max_dist:
-        #     return True
+    def _cal_done(self, state, is_thief_caught):
+        is_exceed_max_round = self.round_count > self.MAX_ROUND_COUNT
+        if is_exceed_max_round or is_thief_caught:
+            return True
 
         return False
 
@@ -154,7 +140,22 @@ class MABallsEnv(gym.Env):
         # self.current_action = step_action
         self.round_count += 1
 
-        return final_state, self._cal_reward(), self._cal_done(final_state), None
+
+        is_caught = self.is_thief_caught()
+
+        return final_state, self._cal_reward(is_caught), self._cal_done(final_state, is_caught), None
+
+    def is_thief_caught(self):
+        # police win when any thief is caught
+        thief_list = self.current_state['thief']
+        police_list = self.current_state['police']
+
+        for _thief in thief_list:
+            for _police in police_list:
+                if self.calc_dist(_thief, _police) < self.MIN_CATCH_DIST:
+                    return True
+
+        return False
 
     def _take_simple_action(self, my_pos, adversary_list, team="thief"):
         """team can be"""
@@ -193,11 +194,11 @@ class MABallsEnv(gym.Env):
 
 
     def get_position_rating(self, my_new_pos, adversary_list):
-        all_dist = [self.calc_eucl_dist(my_new_pos, _ad) for _ad in adversary_list]
+        all_dist = [self.calc_dist(my_new_pos, _ad) for _ad in adversary_list]
         return sum(all_dist)
 
     # TODO: actually we should use manhatton dist
-    def calc_eucl_dist(self, pos1, pos2):
+    def calc_dist(self, pos1, pos2):
         # calc Euclidean Distance
         _coords1 = np.array(pos1)  # location of me
         _coords2 = np.array(pos2)
