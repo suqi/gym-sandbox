@@ -14,17 +14,16 @@ class MABallsEnv(gym.Env):
     """
     metadata = {'render.modes': ['human', 'rgb_array']}
 
-    WIN_REWARD = 300
-    LOSE_REWARD = -300
+    WIN_REWARD = 1
+    LOSE_REWARD = -1
 
-    MAX_DIST = 800
-    MAX_ROUND_COUNT = 200
+    MAX_ROUND_COUNT = 100
 
-    MIN_CATCH_DIST = 20
+    MIN_CATCH_DIST = 2
 
     TEAMS = {
-        "police": {"speed": 5},
-        "thief": {"speed": 15},
+        "police": {"speed": 1},
+        "thief": {"speed": 1},
     }
 
     def __init__(self,  agent_num=5, agent_team="police", adversary_num=2, map_size=200):
@@ -47,6 +46,8 @@ class MABallsEnv(gym.Env):
         self.current_state = None
         self.current_action = None
         self.reward_hist = []
+        self.running_ep_r = []
+        self.current_done = False # 用来在渲染的时候展示终结状态
 
         # observation will be a list of agent_num
         # self.observation_space = gym.spaces.Box(
@@ -63,26 +64,24 @@ class MABallsEnv(gym.Env):
             self.map_size, self.team_size) if show_dashboard else None
 
 
-    # def _trans_state(self, state):
-    #     result = list()
-    #     if state.player and state.npc:
-    #         result.append(state.player.base.x - state.npc[0].x)
-    #         result.append(state.player.base.y - state.npc[0].y)
-    #         result.append(state.player.base.hp)
-    #         result.append(state.player.base.hp_m)
-    #         result.append(state.npc[0].hp)
-    #         result.append(state.npc[0].hp_m)
-    #     else:
-    #         result.extend([0, 0, 0, 0, 0, 0])
-    #     return np.array(result)
+    def _trans_state(self, state):
+        result = list()
 
-    def _cal_reward(self, is_thief_caught):
-        reward = 0
+        # 1v1 observation
+        result.extend(np.array(state["police"][0])/self.map_size)
+        result.extend(np.array(state["thief"][0])/self.map_size)
 
-        if is_thief_caught:
-            reward = self.WIN_REWARD
+        return np.array(result)
+
+    def _cal_reward(self, is_thief_caught, is_done):
+        # if is_thief_caught:
+        #     reward = self.WIN_REWARD
         # else:
-        #     reward = self.LOSE_REWARD
+        #     if is_done:
+        #         reward = self.LOSE_REWARD
+        #     else:
+        #         reward = 0
+        reward = -1  # 借鉴MountainCar的reward思路， 不抓到小偷， 一直给-1， 这样总体reward会体现出抓到的快慢
 
         self.reward_hist.append(reward)
 
@@ -108,16 +107,24 @@ class MABallsEnv(gym.Env):
         self.current_state = self.global_ob  # todo: needs to split ob for each agent
         self.round_count = 0
         self.episode_count += 1
-        self.reward_hist = []
 
-        return self.current_state
+        last_ep_r = sum(self.reward_hist)
+        self.reward_hist = []
+        if len(self.running_ep_r) == 0:  # record running episode reward
+            self.running_ep_r.append(last_ep_r)
+        else:
+            self.running_ep_r.append(0.99 * self.running_ep_r[-1] + 0.01 * last_ep_r)
+
+        ob = self._trans_state(self.global_ob)
+
+        return ob
 
     def _close(self):
         pass
 
     def _step(self, action):
         """action in MA env must be a list of actions for each agent"""
-        int_action = int(action)
+        # int_action = int(action)  # 上下左右 0123
 
         final_state = self.current_state.copy()
 
@@ -126,11 +133,26 @@ class MABallsEnv(gym.Env):
         # 要么走x， 要么走y，先看边界，再选距离， 上下左右
         thief_list = self.current_state['thief']
         police_list = self.current_state['police']
-        thief_new_loc = [self._take_simple_action(_thief, police_list, team="thief") for _thief in thief_list]
+
+        # 1. 原地不动的小偷
+        thief_new_loc = thief_list
+        # 2. 会跑的小偷
+        # thief_new_loc = [self._take_simple_action(_thief, police_list, team="thief") for _thief in thief_list]
+
 
         # samely, for me, run to get more close to target
-        # TODO: action should be implemented outside
-        police_new_loc = [self._take_simple_action(_police, thief_list, team="police") for _police in police_list]
+        # police_new_loc = [self._take_simple_action(_police, thief_list, team="police") for _police in police_list]
+
+        directions = [[0, -1], [0, 1], [-1, 0], [1, 0]]  # 上下左右
+        action_dir = np.array(directions[action])
+
+        police_speed = self.TEAMS['police']['speed']
+        police_dir = action_dir * police_speed
+
+        p1 = police_list[0]
+        p1 = (p1[0] + police_dir[0], p1[1] + police_dir[1])
+        p1 = self.ensure_inside(p1)
+        police_new_loc = [p1]
 
         final_state['thief'] = thief_new_loc
         final_state['police'] = police_new_loc
@@ -140,10 +162,23 @@ class MABallsEnv(gym.Env):
         # self.current_action = step_action
         self.round_count += 1
 
-
         is_caught = self.is_thief_caught()
 
-        return final_state, self._cal_reward(is_caught), self._cal_done(final_state, is_caught), None
+        ob = self._trans_state(final_state)
+
+        is_done = self._cal_done(final_state, is_caught)
+        self.current_done = is_done
+
+        reward = self._cal_reward(is_caught, is_done)
+
+        return ob, reward, is_done, None
+
+    def ensure_inside(self, cord):
+        x, y = cord
+        x = self.map_size if x > self.map_size else 0 if x < 0 else x
+        y = self.map_size if y > self.map_size else 0 if y < 0 else y
+        return (x,y)
+
 
     def is_thief_caught(self):
         # police win when any thief is caught
@@ -152,7 +187,7 @@ class MABallsEnv(gym.Env):
 
         for _thief in thief_list:
             for _police in police_list:
-                if self.calc_dist(_thief, _police) < self.MIN_CATCH_DIST:
+                if self.calc_dist(_thief, _police) <= self.MIN_CATCH_DIST:
                     return True
 
         return False
@@ -187,7 +222,7 @@ class MABallsEnv(gym.Env):
         if not self.current_state:
             return
 
-        env_data = [self.current_state, self.reward_hist, self.episode_count]
+        env_data = [self.current_state, self.running_ep_r, self.episode_count, len(self.reward_hist), self.current_done]
         if self.game_dashboard:
             self.game_dashboard.update_plots(env_data)
         return
@@ -199,9 +234,13 @@ class MABallsEnv(gym.Env):
 
     # TODO: actually we should use manhatton dist
     def calc_dist(self, pos1, pos2):
-        # calc Euclidean Distance
         _coords1 = np.array(pos1)  # location of me
         _coords2 = np.array(pos2)
-        # alternative way: np.linalg.norm(_coords1 - _coords2)
-        eucl_dist = np.sqrt(np.sum((_coords1 - _coords2) ** 2))
-        return eucl_dist
+
+        # calc manhatton dist
+        return sum(abs(_coords1 - _coords2))
+
+        # # calc Euclidean Distance
+        # # alternative way: np.linalg.norm(_coords1 - _coords2)
+        # eucl_dist = np.sqrt(np.sum((_coords1 - _coords2) ** 2))
+        # return eucl_dist

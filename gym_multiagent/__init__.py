@@ -9,7 +9,7 @@ register(
     timestep_limit=1000,
 
     kwargs = dict(
-        agent_num=1, agent_team="police", adversary_num=1, map_size=100
+        agent_num=1, agent_team="police", adversary_num=1, map_size=10
     )
     # reward_threshold=1.0,
     # nondeterministic = True,
