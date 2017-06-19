@@ -72,22 +72,27 @@ class BallsGameDashboard:
 
     def update_plots(self, env_state_action):
         """update bokeh plots according to new env state and action data"""
-        global_ob, reward, episode_count, current_step, current_done = env_state_action
+        global_ob, reward, episode_count, current_step, current_is_caught = env_state_action
 
         # eucl_dist = self.calc_eucl_dist((location['target_x'], location['target_y']), (location['me_x'], location['me_y']) )
-        self.plt_loc.title.text = "step: {:5.1f}".format(current_step)
+        self.plt_loc.title.text = "step: #{}".format(current_step)
 
-        # 如果频率过快， jupyter notebook会受不了
+        # note： 如果频率过快， jupyter notebook会受不了
         all_x = [_loc[0] for _loc in global_ob['police']] + [_loc[0] for _loc in global_ob['thief']]
         all_y = [_loc[1] for _loc in global_ob['police']] + [_loc[1] for _loc in global_ob['thief']]
         self.rd_loc.data_source.data['x'] = all_x
         self.rd_loc.data_source.data['y'] = all_y
-        self.rd_loc.data_source.data['fill_color'] = ["green"] * self.police_num + ["red"] * self.thief_num
+
+        # 游戏结束时进行闪动， 表示游戏结束
+        thief_color = "red" if current_is_caught else "yellow"
+        self.rd_loc.data_source.data['fill_color'] = ["green"] * self.police_num + [thief_color] * self.thief_num
+        thief_lw = 3 if current_is_caught else 1
+        self.rd_loc.data_source.data['line_width'] = [10] * self.police_num + [thief_lw] * self.thief_num
 
         self.rd_reward.data_source.data['x'] = range(len(reward))
         self.rd_reward.data_source.data['y'] = reward
-        # self.plt_reward.title.text = "episode #{} / last_ep_reward: {:5.1f}".format(
-        #     episode_count, len(reward), reward[-1] if reward else 0)
+        self.plt_reward.title.text = "episode #{} / last_ep_reward: {:5.1f}".format(
+            episode_count, reward[-1] if reward else 0)
         push_notebook()  # self.nb_handle
 
     def calc_eucl_dist(self, pos1, pos2):
