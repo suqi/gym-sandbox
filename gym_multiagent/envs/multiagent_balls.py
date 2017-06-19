@@ -19,14 +19,14 @@ class MABallsEnv(gym.Env):
 
     MAX_ROUND_COUNT = 100
 
-    MIN_CATCH_DIST = 2
+    MIN_CATCH_DIST = 3
 
     TEAMS = {
-        "police": {"speed": 1},
+        "police": {"speed": 2},
         "thief": {"speed": 1},
     }
 
-    def __init__(self,  agent_num=5, agent_team="police", adversary_num=2, map_size=200):
+    def __init__(self,  agent_num=5, agent_team="police", adversary_num=2, map_size=200, adversary_static=True):
         """the init params should be passed in by code of env registering """
         self.game_dashboard = None
 
@@ -39,6 +39,7 @@ class MABallsEnv(gym.Env):
             self.agent_team: agent_num,
             self.adversary_team: adversary_num
         }
+        self.adversary_static = adversary_static
 
         self.episode_count = 0
         self.round_count = 0
@@ -47,7 +48,7 @@ class MABallsEnv(gym.Env):
         self.current_action = None
         self.reward_hist = []
         self.running_ep_r = []
-        self.current_done = False # 用来在渲染的时候展示终结状态
+        self.current_is_caught = False # 用来在渲染的时候展示被抓住了
 
         # observation will be a list of agent_num
         # self.observation_space = gym.spaces.Box(
@@ -101,12 +102,28 @@ class MABallsEnv(gym.Env):
 
     def _reset(self):
         # global observation from god's view
-        self.global_ob = {_t: [(random.randint(1, self.map_size), random.randint(1, self.map_size))
-                               for _ in range(self.team_size[_t])]
-                            for _t in self.TEAMS.keys()}
+        _map_center = int(self.map_size / 2)
+        _police_radius = int(self.map_size * 0.2)
+        _police_range = _map_center-_police_radius, _map_center+_police_radius
+        _thief_radius = int(self.map_size * 0.4)
+        _thief_range = _map_center - _thief_radius, _map_center + _thief_radius
+
+        self.global_ob = {
+            # 警察从地图中间出发， 让其需要随机向任意方向出发
+            "police": [(random.randint(*_police_range), random.randint(*_police_range))
+                       for _ in range(self.team_size["police"])],
+            # 让小偷在地图四周
+            "thief": [(random.choice(
+                            [random.randint(1, _police_range[0]), random.randint(_police_range[1], self.map_size)]),
+                       random.choice(
+                            [random.randint(1, _thief_range[0]), random.randint(_thief_range[1], self.map_size)]))
+                       for _ in range(self.team_size["thief"])],
+
+        }
         self.current_state = self.global_ob  # todo: needs to split ob for each agent
         self.round_count = 0
         self.episode_count += 1
+        self.current_is_caught = False
 
         last_ep_r = sum(self.reward_hist)
         self.reward_hist = []
@@ -135,9 +152,11 @@ class MABallsEnv(gym.Env):
         police_list = self.current_state['police']
 
         # 1. 原地不动的小偷
-        thief_new_loc = thief_list
+        if self.adversary_static:
+            thief_new_loc = thief_list
         # 2. 会跑的小偷
-        # thief_new_loc = [self._take_simple_action(_thief, police_list, team="thief") for _thief in thief_list]
+        else:
+            thief_new_loc = [self._take_simple_action(_thief, police_list, team="thief") for _thief in thief_list]
 
 
         # samely, for me, run to get more close to target
@@ -163,11 +182,12 @@ class MABallsEnv(gym.Env):
         self.round_count += 1
 
         is_caught = self.is_thief_caught()
+        self.current_is_caught = is_caught
 
         ob = self._trans_state(final_state)
 
         is_done = self._cal_done(final_state, is_caught)
-        self.current_done = is_done
+        self.current_is_caught = is_caught
 
         reward = self._cal_reward(is_caught, is_done)
 
@@ -222,7 +242,8 @@ class MABallsEnv(gym.Env):
         if not self.current_state:
             return
 
-        env_data = [self.current_state, self.running_ep_r, self.episode_count, len(self.reward_hist), self.current_done]
+        env_data = [self.current_state, self.running_ep_r, self.episode_count,
+                    len(self.reward_hist), self.current_is_caught]
         if self.game_dashboard:
             self.game_dashboard.update_plots(env_data)
         return
