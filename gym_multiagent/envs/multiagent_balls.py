@@ -164,7 +164,7 @@ class MABallsEnv(gym.Env):
         """action in MA env must be a list of actions for each agent"""
         # int_action = int(action)  # 上下左右 0123
 
-        final_state = self.current_state.copy()
+        new_state = self.current_state.copy()
 
 
         # the target will run out of me as far as possible
@@ -195,20 +195,22 @@ class MABallsEnv(gym.Env):
         p1 = self.ensure_inside(p1)
         police_new_loc = [p1]
 
-        final_state['thief'] = thief_new_loc
-        final_state['police'] = police_new_loc
+        new_state['thief'] = thief_new_loc
+        new_state['police'] = police_new_loc
 
         self.last_state = self.current_state
-        self.current_state = final_state
-        # self.current_action = step_action
-        self.round_count += 1
 
+        # check
         is_caught = self.is_thief_caught()
         self.current_is_caught = is_caught
 
-        ob = self._trans_state(final_state)
+        self.current_state = new_state
+        # self.current_action = step_action
+        self.round_count += 1
 
-        is_done = self._cal_done(final_state, is_caught)
+        ob = self._trans_state(new_state)
+
+        is_done = self._cal_done(new_state, is_caught)
         self.current_is_caught = is_caught
 
         reward = self._cal_reward(is_caught, is_done)
