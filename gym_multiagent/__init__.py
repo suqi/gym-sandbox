@@ -28,12 +28,25 @@ register(
 )
 
 register(
-    id='MA-BALLS-1v1-grid1-v0',
+    id='MA-BALLS-1v1-grid-v0',
     entry_point='gym_multiagent.envs:MABallsEnv',
     timestep_limit=1000,
 
     kwargs = dict(
         agent_num=1, agent_team="police", adversary_num=3, map_size=20, adversary_static=False, state_format='grid'
+    )
+    # reward_threshold=1.0,
+    # nondeterministic = True,
+)
+
+register(
+    id='MA-BALLS-1v1-grid-ravel-v0',
+    entry_point='gym_multiagent.envs:MABallsEnv',
+    timestep_limit=1000,
+
+    kwargs = dict(
+        agent_num=1, agent_team="police", adversary_num=3, map_size=20, adversary_static=False,
+        state_format='grid',state_ravel=True,
     )
     # reward_threshold=1.0,
     # nondeterministic = True,

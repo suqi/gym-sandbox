@@ -38,7 +38,7 @@ class MABallsEnv(gym.Env):
     }
 
     def __init__(self,  agent_num=5, agent_team="police", adversary_num=2, map_size=200,
-                 adversary_static=True, state_format='grid'):
+                 adversary_static=True, state_format='grid', state_ravel=False):
         """the init params should be passed in by code of env registering
         agent_team: police/thief
         state_format: grid/flat
@@ -57,6 +57,7 @@ class MABallsEnv(gym.Env):
         self.adversary_static = adversary_static
 
         self.state_format = state_format
+        self.state_ravel = state_ravel
         self.grid_scale = 2
         self.grid_depth = 2  # player count, npc count
 
@@ -91,7 +92,8 @@ class MABallsEnv(gym.Env):
             result.extend(np.array(state["thief"][0])/self.map_size)
             return np.array(result)
         elif self.state_format == 'grid':
-            return self.build_grid(state)
+            channel_grids = self.build_grid(state)
+            return channel_grids.ravel() if self.state_ravel else channel_grids
 
     def _cal_reward(self, is_thief_caught, is_done):
         # if is_thief_caught:
