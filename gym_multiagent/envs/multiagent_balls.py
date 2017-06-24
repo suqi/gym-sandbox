@@ -1,3 +1,4 @@
+from collections import defaultdict
 import gym
 import gym.spaces
 import numpy as np
@@ -8,6 +9,8 @@ from gym_multiagent.envs.plot import balls_game_dashboard
 
 class MABallsEnv(gym.Env):
     """A very simple balls game to demo MA algo
+    Principle: don't introduce any complexity, focus on algo test!
+    To make it simple, all state and game logic use int!
     Attention:
     1. in multi agent env, all function should return a list of actions/states/rewards
     2. the env has a fully observable internal state, while agent only has a partially observable state
@@ -25,9 +28,21 @@ class MABallsEnv(gym.Env):
         "police": {"speed": 2},
         "thief": {"speed": 1},
     }
+    GRID_CHANNALS = {
+        "police":{
+            "num": 0
+        },
+        "thief": {
+            "num": 1
+        }
+    }
 
-    def __init__(self,  agent_num=5, agent_team="police", adversary_num=2, map_size=200, adversary_static=True):
-        """the init params should be passed in by code of env registering """
+    def __init__(self,  agent_num=5, agent_team="police", adversary_num=2, map_size=200,
+                 adversary_static=True, state_format='grid'):
+        """the init params should be passed in by code of env registering
+        agent_team: police/thief
+        state_format: grid/flat
+        """
         self.game_dashboard = None
 
         self.map_size = map_size
@@ -40,6 +55,10 @@ class MABallsEnv(gym.Env):
             self.adversary_team: adversary_num
         }
         self.adversary_static = adversary_static
+
+        self.state_format = state_format
+        self.grid_scale = 2
+        self.grid_depth = 2  # player count, npc count
 
         self.episode_count = 0
         self.round_count = 0
@@ -64,15 +83,15 @@ class MABallsEnv(gym.Env):
         self.game_dashboard = balls_game_dashboard.BallsGameDashboard(
             self.map_size, self.team_size) if show_dashboard else None
 
-
     def _trans_state(self, state):
-        result = list()
-
-        # 1v1 observation
-        result.extend(np.array(state["police"][0])/self.map_size)
-        result.extend(np.array(state["thief"][0])/self.map_size)
-
-        return np.array(result)
+        if self.state_format == 'flat':
+            # 1v1 observation
+            result = list()
+            result.extend(np.array(state["police"][0])/self.map_size)
+            result.extend(np.array(state["thief"][0])/self.map_size)
+            return np.array(result)
+        elif self.state_format == 'grid':
+            return self.build_grid(state)
 
     def _cal_reward(self, is_thief_caught, is_done):
         # if is_thief_caught:
@@ -162,6 +181,7 @@ class MABallsEnv(gym.Env):
         # samely, for me, run to get more close to target
         # police_new_loc = [self._take_simple_action(_police, thief_list, team="police") for _police in police_list]
 
+        # TODO: add stop action
         directions = [[0, -1], [0, 1], [-1, 0], [1, 0]]  # 上下左右
         action_dir = np.array(directions[action])
 
@@ -265,3 +285,45 @@ class MABallsEnv(gym.Env):
         # # alternative way: np.linalg.norm(_coords1 - _coords2)
         # eucl_dist = np.sqrt(np.sum((_coords1 - _coords2) ** 2))
         # return eucl_dist
+
+
+    def build_grid(self, state):
+        """transform raw state into a grid-based n-depth matrix"""
+        # a grid with depth/channel like a image file
+        # grid size is 2 times of map size, to make 4 points of 1x1 map can be split into 4 seperate grid
+        # attention: all grid closed to edge must include position on edge line!
+
+        # step1. construct a matrix of data object
+        grid_num = self.map_size * self.grid_scale
+
+        thematrix = np.zeros((grid_num, grid_num, self.grid_depth))
+
+        # step2. analyze state and append data attribute to each object
+
+        # 2.1 split axis by grid num
+
+        # 2.2 add up player's and npc data
+
+        for team in MABallsEnv.TEAMS.keys():
+            for _p in state[team]:
+                print(">> ", team, _p)
+                _grid_cord = self._get_grid_cord(_p)
+
+                _channel = MABallsEnv.GRID_CHANNALS[team]["num"]
+                thematrix[tuple(_grid_cord)][_channel] += 1
+
+        print(thematrix)
+        return thematrix
+
+    def _get_grid_cord(self, raw_cord):
+        """According to raw axis position, calc new grid cordination
+        note 1 is the raw grid size
+        """
+        new_scaled_cord = np.array(raw_cord) * self.grid_scale
+        new_scaled_cord = new_scaled_cord.astype(int)  # transform to grid number
+
+        # handle max edge
+        for _axis in [0, 1]:
+            if new_scaled_cord[_axis] == self.map_size * self.grid_scale:
+                new_scaled_cord[_axis] = new_scaled_cord[_axis] - 1
+        return new_scaled_cord
