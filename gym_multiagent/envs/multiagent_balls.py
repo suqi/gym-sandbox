@@ -306,13 +306,11 @@ class MABallsEnv(gym.Env):
 
         for team in MABallsEnv.TEAMS.keys():
             for _p in state[team]:
-                print(">> ", team, _p)
                 _grid_cord = self._get_grid_cord(_p)
 
                 _channel = MABallsEnv.GRID_CHANNALS[team]["num"]
                 thematrix[tuple(_grid_cord)][_channel] += 1
 
-        print(thematrix)
         return thematrix
 
     def _get_grid_cord(self, raw_cord):
