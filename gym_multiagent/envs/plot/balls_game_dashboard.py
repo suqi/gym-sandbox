@@ -14,6 +14,10 @@ warnings.filterwarnings('ignore')
 # \site-packages\bokeh\models\sources.py:89: BokehUserWarning: ColumnDataSource's columns must be of the same length
 #  lambda: warnings.warn("ColumnDataSource's columns must be of the same length", BokehUserWarning))
 
+# constans for render, change it as you like
+POLICE_RADIUS = 0.05  # percent of map size
+THIEF_RADIUS = 0.02
+
 
 class BallsGameDashboard:
     """A game dashboard to show the game state"""
@@ -24,28 +28,35 @@ class BallsGameDashboard:
         self.global_running_r = []
 
         output_notebook()
-        min_screen_x, min_screen_y, max_screen_x, max_screen_y = \
-            0, 0, map_size, map_size
+        _x_min, _y_min, _x_max, _y_max = 0, 0, map_size, map_size
         plt_loc = figure(
             plot_width=600,
             plot_height=600,
             # toolbar_location=None,
-            x_range=(min_screen_x-1, max_screen_x+1),
-            y_range=(max_screen_y+1, min_screen_y-1),
+            # slightly show 10% more of boundary
+            x_range=(_x_min-map_size/10, _x_max+map_size/10),
+            y_range=(_y_max+map_size/10, _y_min-map_size/10),
             x_axis_location="above",
             title="step #0")  # use up-left corner as origin
         plt_loc.title.align = "center"
         plt_loc.title.text_color = "orange"
         plt_loc.title.text_font_size = "25px"
         plt_loc.title.background_fill_color = "blue"
+        self.plt_loc = plt_loc  # 用于后续更新边界和标题中的距离显示
+
+        # draw edge
+        plt_loc.line(x=[_x_min, _x_max, _x_max, _x_min, _x_min],
+                     y=[_y_min, _y_min, _y_max, _y_max, _y_min],
+                     line_color="navy", line_alpha=0.3, line_dash="dotted", line_width=2)
 
         self.police_num, self.thief_num = team_size['police'], team_size['thief']
         self.total_num = self.police_num + self.thief_num
 
-        self.plt_loc = plt_loc  # 用于后续更新边界和标题中的距离显示
+        # draw balls
         self.rd_loc = plt_loc.circle(
             [-1] * self.total_num, [-1] * self.total_num,
-            size=[50]*self.police_num + [20]*self.thief_num,
+            radius=[POLICE_RADIUS*map_size] * self.police_num + [THIEF_RADIUS*map_size] * self.thief_num,  # radius is by percent
+            # size=[50]*self.police_num + [20]*self.thief_num,  # size is px
             line_color="gold",
             line_width=[10]*self.police_num + [1]*self.thief_num,
             fill_color=["green"]*self.police_num + ["yellow"]*self.thief_num,
