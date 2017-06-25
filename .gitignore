@@ -69,6 +69,11 @@ target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+*.ipynb
+
+# tensorflow
+.tf-log
+.tf-models
 
 # pyenv
 .python-version
