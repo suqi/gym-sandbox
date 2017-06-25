@@ -4,7 +4,7 @@ import gym.spaces
 import numpy as np
 import random
 
-from .balls_1vn import Balls1vnEnv
+from .police_kill_all import Balls1vnEnv
 from gym_sandbox.envs.plot import balls_game_dashboard
 
 
