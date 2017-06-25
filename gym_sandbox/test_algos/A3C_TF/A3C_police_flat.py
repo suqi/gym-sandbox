@@ -6,13 +6,15 @@ import gym
 import os
 import shutil
 import matplotlib.pyplot as plt
-import gym_multiagent
+import gym_sandbox
 import time
 
-GAME = 'MA-BALLS-1v1-grid-v0'
+# GAME = 'MA-BALLS-1v1-dynamic-v0'
+# GAME = 'MA-BALLS-1v1-grid-ravel-v0'
+GAME = 'MA-BALLS-1vn-killall-ravel-v0'
 OUTPUT_GRAPH = True
-LOG_DIR = './log'
-N_WORKERS = 1
+LOG_DIR = './.tf-log'
+N_WORKERS = 4
 MAX_GLOBAL_EP = 30000
 GLOBAL_NET_SCOPE = 'Global_Net'
 UPDATE_GLOBAL_ITER = 20
@@ -114,23 +116,23 @@ class Worker(object):
             ep_r = 0
 
             # 每100回合保存训练参数
-            # if GLOBAL_EP % 100 == 0 and RUN_MODE == 'training':
-            #     saver.save(SESS, "models-ma-balls/a3c-1thread-1v1-dynamic", global_step=GLOBAL_EP)
+            if GLOBAL_EP % 1000 == 0 and RUN_MODE == 'training':
+                saver.save(SESS, ".tf-models/a3c-1vn-dynamic", global_step=GLOBAL_EP)
 
             while True:
                 a = self.AC.choose_action(s)
                 s_, r, done, info = self.env.step(a)
 
                 if self.name == 'W_0':
-                    show_interval = GLOBAL_EP % 1000 == 0
-                    nice = GLOBAL_RUNNING_R and GLOBAL_RUNNING_R[-1] >= -10
-                    if show_interval or nice or RUN_MODE=='execution':
+                    # show_interval = GLOBAL_EP % 10 == 0
+                    # nice = GLOBAL_RUNNING_R and GLOBAL_RUNNING_R[-1] >= -10
+                    if True: # show_interval or nice or RUN_MODE=='execution':
                         self.env.render()
 
                         time.sleep(0.2)
 
                         if done:
-                            time.sleep(2)  # 回合结束给点时间看看效果
+                            time.sleep(0.8)  # 回合结束给点时间看看效果
 
 
                 # print('>>>>', 's:', s, ' s_:', s_,  'action:', a, '    -- reward:', r, ' -- done:', done, )
@@ -197,7 +199,7 @@ saver = tf.train.Saver()
 SESS.run(tf.global_variables_initializer())
 
 # 先加载训练过的参数
-# saver.restore(SESS, 'models-ma-balls/a3c-1thread-1v1-dynamic-29900')
+# saver.restore(SESS, 'models-ma-balls/a3c-1thread-1v1-dynamic-4110')
 
 if OUTPUT_GRAPH:
     if os.path.exists(LOG_DIR):

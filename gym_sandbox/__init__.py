@@ -10,7 +10,7 @@ Note: Gym will defaultly use many wrappers to limit the env, like timestep_limit
 
 register(
     id='MA-BALLS-1v1-static-v0',
-    entry_point='gym_multiagent.envs:MABallsEnv',
+    entry_point='gym_sandbox.envs:MABallsEnv',
     timestep_limit=100,
 
     kwargs = dict(
@@ -22,7 +22,7 @@ register(
 
 register(
     id='MA-BALLS-1v1-dynamic-v0',
-    entry_point='gym_multiagent.envs:MABallsEnv',
+    entry_point='gym_sandbox.envs:MABallsEnv',
     timestep_limit=100,
 
     kwargs = dict(
@@ -34,7 +34,7 @@ register(
 
 register(
     id='MA-BALLS-1v1-grid-v0',
-    entry_point='gym_multiagent.envs:MABallsEnv',
+    entry_point='gym_sandbox.envs:MABallsEnv',
     timestep_limit=100,
 
     kwargs = dict(
@@ -46,7 +46,7 @@ register(
 
 register(
     id='MA-BALLS-1v1-grid-ravel-v0',
-    entry_point='gym_multiagent.envs:MABallsEnv',
+    entry_point='gym_sandbox.envs:MABallsEnv',
     timestep_limit=100,
 
     kwargs = dict(
@@ -59,7 +59,7 @@ register(
 
 register(
     id='MA-BALLS-1vn-killall-ravel-v0',
-    entry_point='gym_multiagent.envs:Balls1vnEnv',
+    entry_point='gym_sandbox.envs:Balls1vnEnv',
     timestep_limit=100,
 
     kwargs = dict(
@@ -72,7 +72,7 @@ register(
 
 # register(
 #     id='MA-BALLS-3v2-v0',
-#     entry_point='gym_multiagent.envs:MABallsEnv',
+#     entry_point='gym_sandbox.envs:MABallsEnv',
 #     timestep_limit=1000,
 #
 #     kwargs = dict(

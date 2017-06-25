@@ -4,7 +4,7 @@ import gym.spaces
 import numpy as np
 import random
 
-from gym_multiagent.envs.plot import balls_game_dashboard
+from gym_sandbox.envs.plot import balls_game_dashboard
 
 
 class Balls1vnEnv(gym.Env):
