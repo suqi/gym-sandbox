@@ -73,10 +73,12 @@ register(
 register(
     id='police-1vn-random-killall-ravel-v0',
     entry_point='gym_sandbox.envs:RandomBallsEnv',
-    timestep_limit=100,
+    timestep_limit=1000,
 
     kwargs = dict(
-        agent_num=1, agent_team="police", adversary_num=6, map_size=10, adversary_action="random",
+        agent_num=1, agent_team="police",
+        init_thief_num=1, step_add_thief_max=3,
+        adversary_num=100, map_size=100, adversary_action="random",
         state_format='grid',state_ravel=True,
     )
     # reward_threshold=1.0,

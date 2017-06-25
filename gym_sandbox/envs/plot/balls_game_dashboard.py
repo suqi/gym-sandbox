@@ -49,7 +49,7 @@ class BallsGameDashboard:
                      y=[_y_min, _y_min, _y_max, _y_max, _y_min],
                      line_color="navy", line_alpha=0.3, line_dash="dotted", line_width=2)
 
-        self.police_num, self.thief_num = team_size['police'], team_size['thief']
+        self.police_num, self.thief_num = team_size['police'], 1000 #team_size['thief'] # TODO: must give a biggest num
         self.total_num = self.police_num + self.thief_num
 
         # draw balls
@@ -85,6 +85,8 @@ class BallsGameDashboard:
     def update_plots(self, env_state_action):
         """update bokeh plots according to new env state and action data"""
         global_ob, rewards, ep_count, current_step, current_is_caught, current_done = env_state_action
+        self.police_num = len(global_ob['police'])
+        self.thief_num = len(global_ob['thief'])
 
         # eucl_dist = self.calc_eucl_dist((location['target_x'], location['target_y']), (location['me_x'], location['me_y']) )
         self.plt_loc.title.text = "step: #{}".format(current_step)

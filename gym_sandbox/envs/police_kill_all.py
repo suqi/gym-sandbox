@@ -53,6 +53,13 @@ class Balls1vnEnv(gym.Env):
         }
         self.adversary_action = adversary_action
 
+        # police thief location
+        _map_center = int(self.map_size / 2)
+        _police_radius = int(self.map_size * 0.2)
+        self._police_range = _map_center - _police_radius, _map_center + _police_radius
+        _thief_radius = int(self.map_size * 0.4)
+        self._thief_range = _map_center - _thief_radius, _map_center + _thief_radius
+
         self.state_format = state_format
         self.state_ravel = state_ravel
         self.grid_scale = 2
@@ -114,24 +121,22 @@ class Balls1vnEnv(gym.Env):
         all_killed = len(state["thief"]) == 0
         return all_killed
 
+    def add_one_thief(self):
+        thief_loc = (
+            random.choice([random.randint(1, self._police_range[0]),
+                           random.randint(self._police_range[1], self.map_size)]),
+            random.choice([random.randint(1, self._thief_range[0]),
+                           random.randint(self._thief_range[1], self.map_size)]))
+        return thief_loc
+
     def _reset(self):
         # global observation from god's view
-        _map_center = int(self.map_size / 2)
-        _police_radius = int(self.map_size * 0.2)
-        _police_range = _map_center-_police_radius, _map_center+_police_radius
-        _thief_radius = int(self.map_size * 0.4)
-        _thief_range = _map_center - _thief_radius, _map_center + _thief_radius
-
         self.global_ob = {
             # 警察从地图中间出发， 让其需要随机向任意方向出发
-            "police": [(random.randint(*_police_range), random.randint(*_police_range))
+            "police": [(random.randint(*self._police_range), random.randint(*self._police_range))
                        for _ in range(self.team_size["police"])],
             # 让小偷在地图四周
-            "thief": [(random.choice(
-                            [random.randint(1, _police_range[0]), random.randint(_police_range[1], self.map_size)]),
-                       random.choice(
-                            [random.randint(1, _thief_range[0]), random.randint(_thief_range[1], self.map_size)]))
-                       for _ in range(self.team_size["thief"])],
+            "thief": [self.add_one_thief() for _ in range(self.team_size["thief"])],
 
         }
         self.current_state = self.global_ob  # todo: needs to split ob for each agent
