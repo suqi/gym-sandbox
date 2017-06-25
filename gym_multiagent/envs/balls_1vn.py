@@ -65,7 +65,6 @@ class Balls1vnEnv(gym.Env):
         self.current_state = None
         self.current_action = None
         self.reward_hist = []
-        self.running_ep_r = []
         self.current_is_caught = False # 用来在渲染的时候展示被抓住了
 
         # observation will be a list of agent_num
@@ -113,7 +112,7 @@ class Balls1vnEnv(gym.Env):
         y_dist = self.current_state.player.base.y - self.current_state.npc[0].y
         return np.sqrt(np.square(x_dist) + np.square(y_dist))
 
-    def _cal_done(self, state):
+    def _cal_done(self, state, kill_num):
         all_killed = len(state["thief"]) == 0
         is_exceed_max_round = self.round_count > self.MAX_ROUND_COUNT
         if is_exceed_max_round or all_killed:
@@ -145,16 +144,8 @@ class Balls1vnEnv(gym.Env):
         self.round_count = 0
         self.episode_count += 1
         self.current_is_caught = False
-
-        last_ep_r = sum(self.reward_hist)
-        self.reward_hist = []
-        if len(self.running_ep_r) == 0:  # record running episode reward
-            self.running_ep_r.append(last_ep_r)
-        else:
-            self.running_ep_r.append(0.99 * self.running_ep_r[-1] + 0.01 * last_ep_r)
-
+        self.reward_hist = []  # reward of current ep
         ob = self._trans_state(self.global_ob)
-
         return ob
 
     def _close(self):
@@ -209,11 +200,11 @@ class Balls1vnEnv(gym.Env):
 
         ob = self._trans_state(self.current_state)
 
-        is_done = self._cal_done(self.current_state)
+        self.current_done = self._cal_done(self.current_state, kill_num)
 
-        reward = self._cal_reward(kill_num, is_done)
+        reward = self._cal_reward(kill_num, self.current_done)
 
-        return ob, reward, is_done, None
+        return ob, reward, self.current_done, None
 
     def ensure_inside(self, cord):
         x, y = cord
@@ -222,7 +213,7 @@ class Balls1vnEnv(gym.Env):
         return (x, y)
 
     def check_thief_caught(self):
-        # police win when any thief is caught
+        # note: this is erase thief from state!
         thief_list = self.current_state['thief']
         police_list = self.current_state['police']
 
@@ -267,8 +258,8 @@ class Balls1vnEnv(gym.Env):
         if not self.current_state:
             return
 
-        env_data = [self.current_state, self.running_ep_r, self.episode_count,
-                    len(self.reward_hist), self.current_is_caught]
+        env_data = [self.current_state, self.reward_hist, self.episode_count,
+                    len(self.reward_hist), self.current_is_caught, self.current_done]
         if self.game_dashboard:
             self.game_dashboard.update_plots(env_data)
         return

@@ -21,6 +21,7 @@ class BallsGameDashboard:
     def __init__(self, map_size, team_size):
         self.map_size = map_size
         self.team_size = team_size
+        self.global_running_r = []
 
         output_notebook()
         min_screen_x, min_screen_y, max_screen_x, max_screen_y = \
@@ -59,7 +60,7 @@ class BallsGameDashboard:
         plt_reward.title.background_fill_color = "black"
         self.plt_reward = plt_reward  # 用于后续更新标题中的reward值
         self.rd_reward = plt_reward.line(
-            [1, 2, 3, 4, 5], [6, 7, 2, 4, 5], line_width=2)
+            [1], [10], line_width=2)
 
         # put all the plots in a gridplot
         plt_combo = gridplot(
@@ -72,7 +73,7 @@ class BallsGameDashboard:
 
     def update_plots(self, env_state_action):
         """update bokeh plots according to new env state and action data"""
-        global_ob, reward, episode_count, current_step, current_is_caught = env_state_action
+        global_ob, rewards, ep_count, current_step, current_is_caught, current_done = env_state_action
 
         # eucl_dist = self.calc_eucl_dist((location['target_x'], location['target_y']), (location['me_x'], location['me_y']) )
         self.plt_loc.title.text = "step: #{}".format(current_step)
@@ -89,10 +90,18 @@ class BallsGameDashboard:
         thief_lw = 3 if current_is_caught else 1
         self.rd_loc.data_source.data['line_width'] = [10] * self.police_num + [thief_lw] * self.thief_num
 
-        self.rd_reward.data_source.data['x'] = range(len(reward))
-        self.rd_reward.data_source.data['y'] = reward
-        self.plt_reward.title.text = "episode #{} / last_ep_reward: {:5.1f}".format(
-            episode_count, reward[-1] if reward else 0)
+        if current_done:
+            ep_reward = sum(rewards)
+            if len(self.global_running_r) == 0:  # record running episode reward
+                self.global_running_r.append(ep_reward)
+            else:
+                self.global_running_r.append(0.99 * self.global_running_r[-1] + 0.01 * ep_reward)
+
+            self.rd_reward.data_source.data['x'] = range(len(self.global_running_r))
+            self.rd_reward.data_source.data['y'] = self.global_running_r
+            self.plt_reward.title.text = "episode #{} / last_ep_reward: {:5.1f}".format(
+                ep_count, self.global_running_r[-1])
+
         push_notebook()  # self.nb_handle
 
     def calc_eucl_dist(self, pos1, pos2):
