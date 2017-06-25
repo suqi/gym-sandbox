@@ -18,8 +18,6 @@ class Balls1vnEnv(gym.Env):
     WIN_REWARD = 1
     LOSE_REWARD = -1
 
-    MAX_ROUND_COUNT = 100
-
     MIN_CATCH_DIST = 3
 
     TEAMS = {
@@ -60,7 +58,6 @@ class Balls1vnEnv(gym.Env):
         self.grid_depth = 2  # player count, npc count
 
         self.episode_count = 0
-        self.round_count = 0
         self.last_state = None
         self.current_state = None
         self.current_action = None
@@ -114,11 +111,7 @@ class Balls1vnEnv(gym.Env):
 
     def _cal_done(self, state, kill_num):
         all_killed = len(state["thief"]) == 0
-        is_exceed_max_round = self.round_count > self.MAX_ROUND_COUNT
-        if is_exceed_max_round or all_killed:
-            return True
-
-        return False
+        return all_killed
 
     def _reset(self):
         # global observation from god's view
@@ -141,7 +134,6 @@ class Balls1vnEnv(gym.Env):
 
         }
         self.current_state = self.global_ob  # todo: needs to split ob for each agent
-        self.round_count = 0
         self.episode_count += 1
         self.current_is_caught = False
         self.reward_hist = []  # reward of current ep
@@ -192,7 +184,6 @@ class Balls1vnEnv(gym.Env):
         self.last_state = self.current_state
         self.current_state = new_state
         # self.current_action = step_action
-        self.round_count += 1
 
         # check and update state
         kill_num = self.check_thief_caught()
