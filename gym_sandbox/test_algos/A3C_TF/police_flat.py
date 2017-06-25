@@ -11,7 +11,9 @@ import time
 
 # GAME = 'MA-BALLS-1v1-dynamic-v0'
 # GAME = 'MA-BALLS-1v1-grid-ravel-v0'
-GAME = 'MA-BALLS-1vn-killall-ravel-v0'
+# GAME = 'MA-BALLS-1vn-killall-ravel-v0'
+GAME = 'police-1vn-random-killall-ravel-v0'
+
 OUTPUT_GRAPH = True
 LOG_DIR = './.tf-log'
 N_WORKERS = 4

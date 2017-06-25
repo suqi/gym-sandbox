@@ -1,5 +1,6 @@
 # gym-sandbox
-Customize your own gym environment to simulate any RL problem you want to solve.
+- Customize your own gym environment to simulate any RL problem you want to solve.
+- Principle: don't introduce any complexity, focus on algo test!
 
 ## Philosophy
 Divide and Conquer.

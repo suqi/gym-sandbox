@@ -12,20 +12,14 @@ class MABallsEnv(Balls1vnEnv):
     """A very simple balls game to demo MA algo
     Principle: don't introduce any complexity, focus on algo test!
     To make it simple, all state and game logic use int!
-    Attention:
-    1. in multi agent env, all function should return a list of actions/states/rewards
-    2. the env has a fully observable internal state, while agent only has a partially observable state
-    3. when any thief is caught, game end!  So this env is suitable for state of fixed postion list
+    Attention: when any thief is caught, game end!  So this env is suitable for state of fixed postion list
     """
     def _cal_done(self, state, kill_num):
-        is_exceed_max_round = self.round_count > self.MAX_ROUND_COUNT
-        if is_exceed_max_round or kill_num:
-            return True
-
-        return False
+        # police win when any thief is caught
+        return True if kill_num else False
 
     def check_thief_caught(self):
-        # police win when any thief is caught
+        # don't change state here!
         thief_list = self.current_state['thief']
         police_list = self.current_state['police']
 

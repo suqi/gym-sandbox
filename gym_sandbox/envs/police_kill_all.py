@@ -34,10 +34,11 @@ class Balls1vnEnv(gym.Env):
     }
 
     def __init__(self,  agent_num=5, agent_team="police", adversary_num=2, map_size=200,
-                 adversary_static=True, state_format='grid', state_ravel=False):
+                 adversary_action="static", state_format='grid', state_ravel=False):
         """the init params should be passed in by code of env registering
         agent_team: police/thief
         state_format: grid/flat
+        adversary_action: static/simple/random
         """
         self.game_dashboard = None
 
@@ -50,7 +51,7 @@ class Balls1vnEnv(gym.Env):
             self.agent_team: agent_num,
             self.adversary_team: adversary_num
         }
-        self.adversary_static = adversary_static
+        self.adversary_action = adversary_action
 
         self.state_format = state_format
         self.state_ravel = state_ravel
@@ -156,12 +157,14 @@ class Balls1vnEnv(gym.Env):
         police_list = self.current_state['police']
 
         # 1. 原地不动的小偷
-        if self.adversary_static:
+        if self.adversary_action == "static":
             thief_new_loc = thief_list
         # 2. 会跑的小偷
-        else:
+        elif self.adversary_action == "simple":
             thief_new_loc = [self._take_simple_action(_thief, police_list, team="thief") for _thief in thief_list]
-
+        # 3. 随机的行动
+        else:
+            thief_new_loc = [self._take_random_action(_thief, team="thief") for _thief in thief_list]
 
         # samely, for me, run to get more close to target
         # police_new_loc = [self._take_simple_action(_police, thief_list, team="police") for _police in police_list]
@@ -204,7 +207,9 @@ class Balls1vnEnv(gym.Env):
         return (x, y)
 
     def check_thief_caught(self):
-        # note: this is erase thief from state!
+        """override attention: must return thief caught num of this step
+        Attention: state will be change here!
+        """
         thief_list = self.current_state['thief']
         police_list = self.current_state['police']
 
@@ -219,10 +224,8 @@ class Balls1vnEnv(gym.Env):
 
         return len(thief_list) - len(survived_thief_list)  # 击杀个数
 
-    def _take_simple_action(self, my_pos, adversary_list, team="thief"):
-        """team can be"""
+    def _get_avail_new_loc(self, my_pos, my_speed):
         x, y = my_pos
-        my_speed = self.TEAMS[team]['speed']
         available_direction = [
             y - my_speed > 0,
             y + my_speed < self.map_size,
@@ -237,6 +240,11 @@ class Balls1vnEnv(gym.Env):
         ]
 
         available_loc = [_l for i, _l in enumerate(new_location) if available_direction[i]]
+        return available_loc
+
+    def _take_simple_action(self, my_pos, adversary_list, team="thief"):
+        """take a little clever action"""
+        available_loc = self._get_avail_new_loc(my_pos, self.TEAMS[team]['speed'])
 
         new_dist = [self.get_position_rating(my_new_pos, adversary_list) for my_new_pos in available_loc]
 
@@ -244,6 +252,11 @@ class Balls1vnEnv(gym.Env):
         best_choice = func(enumerate(new_dist), key=lambda x: x[1])[0]
         my_final_pos = available_loc[best_choice]
         return my_final_pos
+
+    def _take_random_action(self, my_pos, team="thief"):
+        """Take a random walk"""
+        available_loc = self._get_avail_new_loc(my_pos, self.TEAMS[team]['speed'])
+        return random.choice(available_loc)
 
     def _render(self, mode='human', close=False):
         if not self.current_state:
@@ -254,7 +267,6 @@ class Balls1vnEnv(gym.Env):
         if self.game_dashboard:
             self.game_dashboard.update_plots(env_data)
         return
-
 
     def get_position_rating(self, my_new_pos, adversary_list):
         all_dist = [self.calc_dist(my_new_pos, _ad) for _ad in adversary_list]
@@ -272,7 +284,6 @@ class Balls1vnEnv(gym.Env):
         # # alternative way: np.linalg.norm(_coords1 - _coords2)
         # eucl_dist = np.sqrt(np.sum((_coords1 - _coords2) ** 2))
         # return eucl_dist
-
 
     def build_grid(self, state):
         """transform raw state into a grid-based n-depth matrix"""
