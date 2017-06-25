@@ -321,3 +321,6 @@ class Balls1vnEnv(gym.Env):
             if new_scaled_cord[_axis] == self.map_size * self.grid_scale:
                 new_scaled_cord[_axis] = new_scaled_cord[_axis] - 1
         return new_scaled_cord
+
+    def close(self, *args, **kwargs):
+        pass  # close will trigger render(don't need it in many case)
