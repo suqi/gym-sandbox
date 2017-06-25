@@ -29,7 +29,7 @@ class BallsGameDashboard:
         plt_loc = figure(
             plot_width=600,
             plot_height=600,
-            toolbar_location=None,
+            # toolbar_location=None,
             x_range=(min_screen_x-1, max_screen_x+1),
             y_range=(max_screen_y+1, min_screen_y-1),
             x_axis_location="above",
