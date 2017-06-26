@@ -6,7 +6,7 @@
 1. git clone this repo
 2. cd into repo
 3. pip install -e .
-4. Switch to your algo, and `gym.make("xxx-v0")`
+4. Switch to your algo, and `import gym_sandbox ; gym.make("xxx-v0")`
     - all xxx env are in __init__.py of root dir.
 
 ## Philosophy

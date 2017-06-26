@@ -9,7 +9,7 @@ Note: Gym will defaultly use many wrappers to limit the env, like timestep_limit
 """
 
 register(
-    id='Police-killone-static-v0',
+    id='police-killone-static-v0',
     entry_point='gym_sandbox.envs:PoliceKillOneEnv',
     timestep_limit=100,
 
@@ -21,7 +21,7 @@ register(
 )
 
 register(
-    id='Police-killone-dynamic-v0',
+    id='police-killone-dynamic-v0',
     entry_point='gym_sandbox.envs:PoliceKillOneEnv',
     timestep_limit=100,
 
@@ -33,7 +33,7 @@ register(
 )
 
 register(
-    id='Police-killone-grid-v0',
+    id='police-killone-grid-v0',
     entry_point='gym_sandbox.envs:PoliceKillOneEnv',
     timestep_limit=100,
 
@@ -45,7 +45,7 @@ register(
 )
 
 register(
-    id='Police-killone-ravel-v0',
+    id='police-killone-ravel-v0',
     entry_point='gym_sandbox.envs:PoliceKillOneEnv',
     timestep_limit=100,
 
@@ -58,7 +58,7 @@ register(
 )
 
 register(
-    id='Policekillall-ravel-v0',
+    id='police-killall-ravel-v0',
     entry_point='gym_sandbox.envs:PoliceKillAllEnv',
     timestep_limit=100,
 
