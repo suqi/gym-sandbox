@@ -2,6 +2,13 @@
 - Customize your own gym environment to simulate any RL problem you want to solve.
 - Principle: don't introduce any complexity, focus on algo test!
 
+## How to use
+1. git clone this repo
+2. cd into repo
+3. pip install -e .
+4. Switch to your algo, and `gym.make("xxx-v0")`
+    - all xxx env are in __init__.py of root dir.
+
 ## Philosophy
 Divide and Conquer.
 - Divide complex real problem into clean focused sub-tasks, and conquer by each.
