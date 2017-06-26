@@ -4,11 +4,11 @@ import gym.spaces
 import numpy as np
 import random
 
-from .police_kill_all import Balls1vnEnv
+from .police_base import PoliceKillAllEnv
 from gym_sandbox.envs.plot import balls_game_dashboard
 
 
-class MABallsEnv(Balls1vnEnv):
+class PoliceKillOneEnv(PoliceKillAllEnv):
     """A very simple balls game to demo MA algo
     Principle: don't introduce any complexity, focus on algo test!
     To make it simple, all state and game logic use int!

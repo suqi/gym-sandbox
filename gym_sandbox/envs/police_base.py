@@ -7,10 +7,10 @@ import random
 from gym_sandbox.envs.plot import balls_game_dashboard
 
 
-class Balls1vnEnv(gym.Env):
+class PoliceKillAllEnv(gym.Env):
     """
     Copied from multiagent_balls, difference is
-    1. police must catch all thief
+    1. police must kill all thief
     2. only support grid state! because thief list order is not managed
     """
     metadata = {'render.modes': ['human', 'rgb_array']}
@@ -307,11 +307,11 @@ class Balls1vnEnv(gym.Env):
 
         # 2.2 add up player's and npc data
 
-        for team in Balls1vnEnv.TEAMS.keys():
+        for team in PoliceKillAllEnv.TEAMS.keys():
             for _p in state[team]:
                 _grid_cord = self._get_grid_cord(_p)
 
-                _channel = Balls1vnEnv.GRID_CHANNALS[team]["num"]
+                _channel = PoliceKillAllEnv.GRID_CHANNALS[team]["num"]
                 thematrix[tuple(_grid_cord)][_channel] += 1
 
         return thematrix

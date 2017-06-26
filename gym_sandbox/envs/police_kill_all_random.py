@@ -4,11 +4,11 @@ import gym.spaces
 import numpy as np
 import random
 
-from .police_kill_all import Balls1vnEnv
+from .police_base import PoliceKillAllEnv
 from gym_sandbox.envs.plot import balls_game_dashboard
 
 
-class RandomBallsEnv(Balls1vnEnv):
+class RandomBallsEnv(PoliceKillAllEnv):
     """
     Focus to add more randomness into env
     Feature:
