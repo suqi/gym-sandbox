@@ -88,7 +88,6 @@ class BallsGameDashboard:
         self.police_num = len(global_ob['police'])
         self.thief_num = len(global_ob['thief'])
 
-        # eucl_dist = self.calc_eucl_dist((location['target_x'], location['target_y']), (location['me_x'], location['me_y']) )
         self.plt_loc.title.text = "step: #{}".format(current_step)
 
         # note： 如果频率过快， jupyter notebook会受不了
@@ -116,11 +115,3 @@ class BallsGameDashboard:
                 ep_count, self.global_running_r[-1])
 
         push_notebook()  # self.nb_handle
-
-    def calc_eucl_dist(self, pos1, pos2):
-        # calc Euclidean Distance
-        _coords1 = np.array(pos1)  # location of me
-        _coords2 = np.array(pos2)
-        # alternative way: np.linalg.norm(_coords1 - _coords2)
-        eucl_dist = np.sqrt(np.sum((_coords1 - _coords2) ** 2))
-        return eucl_dist

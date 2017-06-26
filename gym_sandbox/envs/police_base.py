@@ -139,7 +139,7 @@ class PoliceKillAllEnv(gym.Env):
             "thief": [self.add_one_thief() for _ in range(self.team_size["thief"])],
 
         }
-        self.current_state = self.global_ob  # todo: needs to split ob for each agent
+        self.current_state = self.global_ob  # todo: needs to split ob for each agent in MA
         self.episode_count += 1
         self.current_is_caught = False
         self.reward_hist = []  # reward of current ep
@@ -277,12 +277,10 @@ class PoliceKillAllEnv(gym.Env):
         all_dist = [self.calc_dist(my_new_pos, _ad) for _ad in adversary_list]
         return sum(all_dist)
 
-    # TODO: actually we should use manhatton dist
     def calc_dist(self, pos1, pos2):
+        """manhatton dist"""
         _coords1 = np.array(pos1)  # location of me
         _coords2 = np.array(pos2)
-
-        # calc manhatton dist
         return sum(abs(_coords1 - _coords2))
 
         # # calc Euclidean Distance
