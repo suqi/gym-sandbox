@@ -17,7 +17,7 @@ register(
 
     kwargs = dict(
         agent_num=1, agent_team="police", adversary_num=1, map_size=10, adversary_action="static",
-        state_format='flat', state_ravel=False
+        state_format='cord_list', state_ravel=False
     )
     # reward_threshold=1.0,
     # nondeterministic = True,
@@ -30,7 +30,7 @@ register(
 
     kwargs = dict(
         agent_num=1, agent_team="police", adversary_num=1, map_size=30, adversary_action="simple",
-        state_format='flat',state_ravel=False
+        state_format='cord_list',state_ravel=False
     )
     # reward_threshold=1.0,
     # nondeterministic = True,

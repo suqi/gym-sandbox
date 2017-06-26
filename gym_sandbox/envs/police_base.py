@@ -37,7 +37,7 @@ class PoliceKillAllEnv(gym.Env):
                  adversary_action="static", state_format='grid', state_ravel=False):
         """the init params should be passed in by code of env registering
         agent_team: police/thief
-        state_format: grid/flat
+        state_format: grid/cord_list
         adversary_action: static/simple/random
         """
         self.game_dashboard = None
@@ -87,8 +87,8 @@ class PoliceKillAllEnv(gym.Env):
             self.map_size, self.team_size) if show_dashboard else None
 
     def _trans_state(self, state):
-        if self.state_format == 'flat':
-            # 1v1 observation
+        if self.state_format == 'cord_list':
+            # TODO: only support 1v1 now, need to extend
             result = list()
             result.extend(np.array(state["police"][0])/self.map_size)
             result.extend(np.array(state["thief"][0])/self.map_size)
