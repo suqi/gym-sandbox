@@ -7,11 +7,11 @@
 2. cd into repo
 3. pip install -e .
 4. Switch to your algo, and `import gym_sandbox ; gym.make("xxx-v0")`
-    - all xxx env are in `__init__.py` of root dir.
+    - all xxx env are in `env_list.py` of root dir.
     - Please do note that now env requires jupyter notebook
 
 ## Code structure
-- `__init__.py`  >> contains all env you can use
+- `env_list.py`  >> contains all env you can use
 - envs         >> core code of envs
 - test_algos   >> demo algos to solve the env, note it's just demo!
 - test         >> unittests

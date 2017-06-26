@@ -9,9 +9,10 @@ import matplotlib.pyplot as plt
 import gym_sandbox
 import time
 
+GAME = 'police-killone-static-v0'
 # GAME = 'police-killone-dynamic-v0'
 # GAME = 'police-killone-ravel-v0'
-GAME = 'police-killall-ravel-v0'
+# GAME = 'police-killall-ravel-v0'
 # GAME = 'police-1vn-random-killall-ravel-v0'
 
 OUTPUT_GRAPH = True
