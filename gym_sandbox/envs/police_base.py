@@ -65,12 +65,14 @@ class PoliceKillAllEnv(gym.Env):
         self.grid_scale = 2
         self.grid_depth = 2  # player count, npc count
 
+        # performance wrapper
         self.episode_count = 0
         self.last_state = None
         self.current_state = None
         self.current_action = None
         self.reward_hist = []
         self.current_is_caught = False # 用来在渲染的时候展示被抓住了
+        self.elapsed_steps = 0
 
         # observation will be a list of agent_num
         # self.observation_space = gym.spaces.Box(
@@ -119,7 +121,11 @@ class PoliceKillAllEnv(gym.Env):
 
     def _cal_done(self, state, kill_num):
         all_killed = len(state["thief"]) == 0
-        return all_killed
+        _pass_step_limit = self.elapsed_steps >= self.spec.max_episode_steps
+        if _pass_step_limit or all_killed:
+            return True
+
+        return False
 
     def add_one_thief(self):
         thief_loc = (
@@ -140,6 +146,7 @@ class PoliceKillAllEnv(gym.Env):
 
         }
         self.current_state = self.global_ob  # todo: needs to split ob for each agent in MA
+        self.elapsed_steps = 0
         self.episode_count += 1
         self.current_is_caught = False
         self.reward_hist = []  # reward of current ep
@@ -192,6 +199,7 @@ class PoliceKillAllEnv(gym.Env):
         self.last_state = self.current_state
         self.current_state = new_state
         # self.current_action = step_action
+        self.elapsed_steps += 1
 
         # check and update state
         kill_num = self.check_thief_caught()
