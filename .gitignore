@@ -73,7 +73,10 @@ target/
 
 # tensorflow
 .tf-log
-.tf-models
+*.index
+*.meta
+*.data-*of-*
+checkpoint
 
 # pyenv
 .python-version
