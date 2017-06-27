@@ -43,7 +43,7 @@ register(
 
     kwargs = dict(
         agent_num=1, agent_team="police", adversary_num=3, map_size=20, adversary_action="simple",
-        state_format='grid'
+        state_format='grid3d'
     )
     # reward_threshold=1.0,
     # nondeterministic = True,

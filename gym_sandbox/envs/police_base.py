@@ -34,10 +34,10 @@ class PoliceKillAllEnv(gym.Env):
     }
 
     def __init__(self,  agent_num=5, agent_team="police", adversary_num=2, map_size=200,
-                 adversary_action="static", state_format='grid'):
+                 adversary_action="static", state_format='grid3d'):
         """the init params should be passed in by code of env registering
         agent_team: police/thief
-        state_format: grid/grid3d_ravel/cord_list_unfixed/cord_list_fixed_500
+        state_format: grid3d/grid3d_ravel/cord_list_unfixed/cord_list_fixed_500
         adversary_action: static/simple/random
         """
         self.game_dashboard = None
@@ -101,7 +101,7 @@ class PoliceKillAllEnv(gym.Env):
                     result.extend([0, 0])  # for empty placeholder, add 0,0
 
             return np.array(result)
-        elif self.state_format in ('grid', 'grid3d_ravel'):
+        elif self.state_format in ('grid3d', 'grid3d_ravel'):
             channel_grids = self.build_grid(state)
             return channel_grids.ravel() if self.state_format == "grid3d_ravel" else channel_grids
 
