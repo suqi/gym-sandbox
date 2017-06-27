@@ -14,7 +14,8 @@ import time
 # GAME = 'police-killone-ravel-v0'
 # GAME = 'police-killall-ravel-v0'
 # GAME = 'police-killall-static-cords-500-v0'
-GAME = 'police-killall-random-3dravel-v0'
+# GAME = 'police-killall-random-3dravel-v0'
+GAME = 'police-killall-trigger-3dravel-v0'
 
 OUTPUT_GRAPH = True
 LOG_DIR = './.tf-log'
@@ -33,8 +34,8 @@ RUN_MODE = "training" # execution
 
 env = gym.make(GAME)
 _s = env.reset()
-N_S = _s.shape[0] # env.observation_space.shape[0]
-N_A = 4 #env.action_space.n
+N_S = _s.shape[0]  # env.observation_space.shape[0]
+N_A = env.action_space.n
 
 
 class ACNet(object):

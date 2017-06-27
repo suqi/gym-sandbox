@@ -110,3 +110,14 @@ register(
         state_format='grid3d_ravel'
     )
 )
+
+register(
+    id='police-killall-trigger-3dravel-v0',
+    entry_point='gym_sandbox.envs.police_trigger:PoliceTriggerEnv',
+    timestep_limit=100,
+
+    kwargs=dict(
+        agent_num=1, agent_team="police", adversary_num=6, map_size=10, adversary_action="static",
+        state_format='grid3d_ravel',
+    )
+)
