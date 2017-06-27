@@ -13,8 +13,8 @@ import time
 # GAME = 'police-killone-dynamic-v0'
 # GAME = 'police-killone-ravel-v0'
 # GAME = 'police-killall-ravel-v0'
-GAME = 'police-killall-static-cords-500-v0'
-# GAME = 'police-1vn-random-killall-ravel-v0'
+# GAME = 'police-killall-static-cords-500-v0'
+GAME = 'police-killall-random-3dravel-v0'
 
 OUTPUT_GRAPH = True
 LOG_DIR = './.tf-log'
@@ -137,7 +137,6 @@ class Worker(object):
 
                         if done:
                             time.sleep(0.8)  # 回合结束给点时间看看效果
-
 
                 # print('>>>>', 's:', s, ' s_:', s_,  'action:', a, '    -- reward:', r, ' -- done:', done, )
 

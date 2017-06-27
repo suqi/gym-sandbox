@@ -98,17 +98,15 @@ register(
     # nondeterministic = True,
 )
 
-# register(
-#     id='police-1vn-random-killall-ravel-v0',
-#     entry_point='gym_sandbox.envs.police_kill_all_random:RandomBallsEnv',
-#     timestep_limit=100,
-#
-#     kwargs = dict(
-#         agent_num=1, agent_team="police",
-#         init_thief_num=1, step_add_thief_max=3,
-#         adversary_num=100, map_size=20, adversary_action="random",
-#         state_format='grid3d_ravel'
-#     )
-#     # reward_threshold=1.0,
-#     # nondeterministic = True,
-# )
+register(
+    id='police-killall-random-3dravel-v0',
+    entry_point='gym_sandbox.envs.police_kill_all_random:RandomBallsEnv',
+    timestep_limit=100,
+
+    kwargs = dict(
+        agent_num=1, agent_team="police",
+        init_thief_num=1, step_add_thief_max=3,
+        adversary_num=50, map_size=15, adversary_action="random",
+        state_format='grid3d_ravel'
+    )
+)

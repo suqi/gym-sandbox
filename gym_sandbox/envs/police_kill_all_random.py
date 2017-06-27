@@ -20,6 +20,7 @@ class RandomBallsEnv(PoliceKillAllEnv):
         super().__init__(**kwargs)
 
         self.step_add_thief_max = step_add_thief_max
+        self.init_thief_num = init_thief_num
         self.team_size[self.adversary_team] = init_thief_num
         self.rest_thief_num = self.adversary_num - init_thief_num
 
@@ -33,7 +34,14 @@ class RandomBallsEnv(PoliceKillAllEnv):
 
         return super()._step(action)
 
+    def _reset(self):
+        self.rest_thief_num = self.adversary_num - self.init_thief_num
+        return super()._reset()
+
     def _cal_done(self, state, kill_num):
-        all_added = self.rest_thief_num <= 0
-        all_killed = len(state["thief"]) == 0
-        return all_added and all_killed
+        all_killed = self.rest_thief_num <= 0 and len(state["thief"]) == 0
+        _pass_step_limit = self.elapsed_steps >= self.spec.max_episode_steps
+        if _pass_step_limit or all_killed:
+            return True
+
+        return False
