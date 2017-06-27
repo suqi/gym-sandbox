@@ -77,6 +77,7 @@ target/
 *.meta
 *.data-*of-*
 checkpoint
+.keras
 
 # pyenv
 .python-version
