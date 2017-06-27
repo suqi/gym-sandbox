@@ -12,12 +12,13 @@ import time
 # GAME = 'police-killone-static-v0'
 # GAME = 'police-killone-dynamic-v0'
 # GAME = 'police-killone-ravel-v0'
-GAME = 'police-killall-ravel-v0'
+# GAME = 'police-killall-ravel-v0'
+GAME = 'police-killall-static-cords-500-v0'
 # GAME = 'police-1vn-random-killall-ravel-v0'
 
 OUTPUT_GRAPH = True
 LOG_DIR = './.tf-log'
-N_WORKERS = 1
+N_WORKERS = 2
 MAX_GLOBAL_EP = 30000
 GLOBAL_NET_SCOPE = 'Global_Net'
 UPDATE_GLOBAL_ITER = 20
