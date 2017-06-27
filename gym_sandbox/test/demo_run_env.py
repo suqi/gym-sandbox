@@ -4,9 +4,10 @@ import gym_sandbox
 
 # choose a env name from env_list
 # env = gym.make("police-killall-ravel-v0")
-env = gym.make("police-killall-static-500cords-v0")
+# env = gym.make("police-killall-static-cords-500-v0")
+env = gym.make("police-killall-trigger-3dravel-v0")
 
-print("action shape >>> ", env.action_space)
+print("action shape >>> ", env.action_space.n)
 
 s_init = env.reset()
 print("state shape >>> ", s_init.shape)

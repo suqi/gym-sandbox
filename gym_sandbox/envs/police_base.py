@@ -42,6 +42,10 @@ class PoliceKillAllEnv(gym.Env):
         state_format: grid3d/grid3d_ravel/cord_list_unfixed/cord_list_fixed_500
         adversary_action: static/simple/random
         """
+        self.action_space = gym.spaces.Discrete(len(MOVE_ACTIONS))
+        # self.observation_space = gym.spaces.Box(
+        #     float("-inf"), float("inf"), (self.STATE_DIM,))
+
         self.game_dashboard = None
 
         self.map_size = map_size
@@ -74,13 +78,6 @@ class PoliceKillAllEnv(gym.Env):
         self.reward_hist = []
         self.current_is_caught = False # 用来在渲染的时候展示被抓住了
         self.elapsed_steps = 0
-
-        # observation will be a list of agent_num
-        # self.observation_space = gym.spaces.Box(
-        #     float("-inf"), float("inf"), (self.STATE_DIM,))
-        #
-        # # {move_up, move_right, move_left, move_down,}
-        # self.action_space = gym.spaces.Discrete(self.ACTION_DIM)
 
     def init_params(self, show_dashboard=True):
         """You can be in police/thief team (警察抓小偷)
