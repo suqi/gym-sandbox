@@ -34,10 +34,10 @@ class PoliceKillAllEnv(gym.Env):
     }
 
     def __init__(self,  agent_num=5, agent_team="police", adversary_num=2, map_size=200,
-                 adversary_action="static", state_format='grid', state_ravel=False):
+                 adversary_action="static", state_format='grid'):
         """the init params should be passed in by code of env registering
         agent_team: police/thief
-        state_format: grid/cord_list
+        state_format: grid/grid3d_ravel/cord_list_unfixed/cord_list_fixed_500
         adversary_action: static/simple/random
         """
         self.game_dashboard = None
@@ -61,7 +61,6 @@ class PoliceKillAllEnv(gym.Env):
         self._thief_range = _map_center - _thief_radius, _map_center + _thief_radius
 
         self.state_format = state_format
-        self.state_ravel = state_ravel
         self.grid_scale = 2
         self.grid_depth = 2  # player count, npc count
 
@@ -89,15 +88,22 @@ class PoliceKillAllEnv(gym.Env):
             self.map_size, self.team_size) if show_dashboard else None
 
     def _trans_state(self, state):
-        if self.state_format == 'cord_list':
-            # TODO: only support 1v1 now, need to extend
+        if self.state_format in ('cord_list_unfixed', 'cord_list_fixed_500'):
+            # output a fixed size of cord list, if empty, add (0,0)
             result = list()
-            result.extend(np.array(state["police"][0])/self.map_size)
-            result.extend(np.array(state["thief"][0])/self.map_size)
+            for _p in state["police"]:
+                result.extend(np.array(_p)/self.map_size)
+            for _t in state["thief"]:
+                result.extend(np.array(_t)/self.map_size)
+
+            if self.state_format == "cord_list_fixed_500":
+                for _ in range(500 - len(state["police"]) - len(state["thief"])):
+                    result.extend([0, 0])  # for empty placeholder, add 0,0
+
             return np.array(result)
-        elif self.state_format == 'grid':
+        elif self.state_format in ('grid', 'grid3d_ravel'):
             channel_grids = self.build_grid(state)
-            return channel_grids.ravel() if self.state_ravel else channel_grids
+            return channel_grids.ravel() if self.state_format == "grid3d_ravel" else channel_grids
 
     def _cal_reward(self, kill_num, is_done):
         # if is_thief_caught:

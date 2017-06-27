@@ -17,7 +17,7 @@ register(
 
     kwargs = dict(
         agent_num=1, agent_team="police", adversary_num=1, map_size=10, adversary_action="static",
-        state_format='cord_list', state_ravel=False
+        state_format='cord_list_unfixed'
     )
     # reward_threshold=1.0,
     # nondeterministic = True,
@@ -30,7 +30,7 @@ register(
 
     kwargs = dict(
         agent_num=1, agent_team="police", adversary_num=1, map_size=30, adversary_action="simple",
-        state_format='cord_list',state_ravel=False
+        state_format='cord_list_unfixed'
     )
     # reward_threshold=1.0,
     # nondeterministic = True,
@@ -43,7 +43,7 @@ register(
 
     kwargs = dict(
         agent_num=1, agent_team="police", adversary_num=3, map_size=20, adversary_action="simple",
-        state_format='grid',state_ravel=False
+        state_format='grid'
     )
     # reward_threshold=1.0,
     # nondeterministic = True,
@@ -56,11 +56,34 @@ register(
 
     kwargs = dict(
         agent_num=1, agent_team="police", adversary_num=3, map_size=20, adversary_action="simple",
-        state_format='grid',state_ravel=True,
+        state_format='grid3d_ravel',
     )
     # reward_threshold=1.0,
     # nondeterministic = True,
 )
+
+register(
+    id='police-killall-static-cords-500-v0',
+    entry_point='gym_sandbox.envs.police_base:PoliceKillAllEnv',
+    timestep_limit=100,
+
+    kwargs = dict(
+        agent_num=1, agent_team="police", adversary_num=10, map_size=10, adversary_action="static",
+        state_format='cord_list_fixed_500'
+    )
+)
+
+register(
+    id='police-killall-static-cords-unfixed-v0',
+    entry_point='gym_sandbox.envs.police_base:PoliceKillAllEnv',
+    timestep_limit=100,
+
+    kwargs = dict(
+        agent_num=1, agent_team="police", adversary_num=10, map_size=10, adversary_action="static",
+        state_format='cord_list_unfixed'
+    )
+)
+
 
 register(
     id='police-killall-ravel-v0',
@@ -69,7 +92,7 @@ register(
 
     kwargs = dict(
         agent_num=1, agent_team="police", adversary_num=6, map_size=20, adversary_action="simple",
-        state_format='grid',state_ravel=True,
+        state_format='grid3d_ravel',
     )
     # reward_threshold=1.0,
     # nondeterministic = True,
@@ -84,7 +107,7 @@ register(
 #         agent_num=1, agent_team="police",
 #         init_thief_num=1, step_add_thief_max=3,
 #         adversary_num=100, map_size=20, adversary_action="random",
-#         state_format='grid',state_ravel=True,
+#         state_format='grid3d_ravel'
 #     )
 #     # reward_threshold=1.0,
 #     # nondeterministic = True,

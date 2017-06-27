@@ -3,7 +3,8 @@ import gym
 import gym_sandbox
 
 # choose a env name from env_list
-env = gym.make("police-killall-ravel-v0")
+# env = gym.make("police-killall-ravel-v0")
+env = gym.make("police-killall-static-500cords-v0")
 
 print("action shape >>> ", env.action_space)
 
