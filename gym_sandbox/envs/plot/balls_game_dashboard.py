@@ -84,11 +84,11 @@ class BallsGameDashboard:
 
     def update_plots(self, env_state_action):
         """update bokeh plots according to new env state and action data"""
-        global_ob, rewards, ep_count, current_step, current_is_caught, current_done = env_state_action
+        global_ob, rewards, ep_count, current_step, cur_action, current_is_caught, current_done = env_state_action
         self.police_num = len(global_ob['police'])
         self.thief_num = len(global_ob['thief'])
 
-        self.plt_loc.title.text = "step: #{}".format(current_step)
+        self.plt_loc.title.text = "step: #{} action: {}".format(current_step, cur_action)
 
         # note： 如果频率过快， jupyter notebook会受不了
         all_x = [_loc[0] for _loc in global_ob['police']] + [_loc[0] for _loc in global_ob['thief']]

@@ -33,7 +33,7 @@ class PoliceTriggerEnv(PoliceKillAllEnv):
 
         self.last_state = self.current_state
         self.current_state = new_state
-        # self.current_action = step_action
+        self.current_action = action
         self.elapsed_steps += 1
 
         ob = self._trans_state(self.current_state)

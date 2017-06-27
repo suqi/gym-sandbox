@@ -210,7 +210,7 @@ class PoliceKillAllEnv(gym.Env):
 
         self.last_state = self.current_state
         self.current_state = new_state
-        # self.current_action = step_action
+        self.current_action = action
         self.elapsed_steps += 1
 
         ob = self._trans_state(self.current_state)
@@ -284,7 +284,7 @@ class PoliceKillAllEnv(gym.Env):
             return
 
         env_data = [self.current_state, self.reward_hist, self.episode_count,
-                    len(self.reward_hist), self.current_is_caught, self.current_done]
+                    len(self.reward_hist), self.current_action, self.current_is_caught, self.current_done]
         if self.game_dashboard:
             self.game_dashboard.update_plots(env_data)
         return
