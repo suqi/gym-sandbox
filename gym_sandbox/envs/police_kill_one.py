@@ -16,7 +16,8 @@ class PoliceKillOneEnv(PoliceKillAllEnv):
     """
     def _cal_done(self, state, kill_num):
         # police win when any thief is caught
-        return True if kill_num else False
+        _pass_step_limit = self.elapsed_steps >= self.spec.max_episode_steps
+        return (kill_num or _pass_step_limit)
 
     def check_thief_caught(self):
         # don't change state here!
