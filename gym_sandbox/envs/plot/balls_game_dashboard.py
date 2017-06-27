@@ -42,7 +42,7 @@ class BallsGameDashboard:
         plt_loc.title.text_color = "orange"
         plt_loc.title.text_font_size = "25px"
         plt_loc.title.background_fill_color = "blue"
-        self.plt_loc = plt_loc  # 用于后续更新边界和标题中的距离显示
+        self.plt_loc = plt_loc  # for later update of title
 
         # draw edge
         plt_loc.line(x=[_x_min, _x_max, _x_max, _x_min, _x_min],
@@ -69,7 +69,7 @@ class BallsGameDashboard:
         plt_reward.title.text_color = "green"
         plt_reward.title.text_font_size = "20px"
         plt_reward.title.background_fill_color = "black"
-        self.plt_reward = plt_reward  # 用于后续更新标题中的reward值
+        self.plt_reward = plt_reward  # for later update of title
         self.rd_reward = plt_reward.line(
             [1], [10], line_width=2)
 
@@ -90,13 +90,13 @@ class BallsGameDashboard:
 
         self.plt_loc.title.text = "step: #{} action: {}".format(current_step, cur_action)
 
-        # note： 如果频率过快， jupyter notebook会受不了
+        # note： if update frequency too high， jupyter notebook will crash exausted
         all_x = [_loc[0] for _loc in global_ob['police']] + [_loc[0] for _loc in global_ob['thief']]
         all_y = [_loc[1] for _loc in global_ob['police']] + [_loc[1] for _loc in global_ob['thief']]
         self.rd_loc.data_source.data['x'] = all_x
         self.rd_loc.data_source.data['y'] = all_y
 
-        # 游戏结束时进行闪动， 表示游戏结束
+        # blink when game end
         thief_color = "red" if current_is_caught else "yellow"
         self.rd_loc.data_source.data['fill_color'] = ["green"] * self.police_num + [thief_color] * self.thief_num
         thief_lw = 3 if current_is_caught else 1

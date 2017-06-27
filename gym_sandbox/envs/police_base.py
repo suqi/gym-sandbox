@@ -11,6 +11,7 @@ MOVE_ACTIONS = [[0, -1], [0, 1], [-1, 0], [1, 0]]  # up/down/left/right
 
 class PoliceKillAllEnv(gym.Env):
     """
+    Police catch Thief
     Copied from multiagent_balls, difference is
     1. police must kill all thief
     2. only support grid state! because thief list order is not managed
@@ -41,6 +42,7 @@ class PoliceKillAllEnv(gym.Env):
         agent_team: police/thief
         state_format: grid3d/grid3d_ravel/cord_list_unfixed/cord_list_fixed_500
         adversary_action: static/simple/random
+        Note: for simplicity, the map is a square
         """
         self.action_space = gym.spaces.Discrete(len(MOVE_ACTIONS))
         # self.observation_space = gym.spaces.Box(
@@ -76,13 +78,11 @@ class PoliceKillAllEnv(gym.Env):
         self.current_state = None
         self.current_action = None
         self.reward_hist = []
-        self.current_is_caught = False # 用来在渲染的时候展示被抓住了
+        self.current_is_caught = False  # used for render
         self.elapsed_steps = 0
 
     def init_params(self, show_dashboard=True):
-        """You can be in police/thief team (警察抓小偷)
-        为了简化， 先用正方形即可， 因为跟长方形没有区别
-        """
+        """to control something after env is made"""
         self.game_dashboard = balls_game_dashboard.BallsGameDashboard(
             self.map_size, self.team_size) if show_dashboard else None
 
@@ -105,18 +105,13 @@ class PoliceKillAllEnv(gym.Env):
             return channel_grids.ravel() if self.state_format == "grid3d_ravel" else channel_grids
 
     def _cal_reward(self, kill_num, is_done):
-        # if is_thief_caught:
-        #     reward = self.WIN_REWARD
-        # else:
-        #     if is_done:
-        #         reward = self.LOSE_REWARD
-        #     else:
-        #         reward = 0
+        """
+        w.r.t idea of MountainCar
+        if no thief caught, always -1
+        so that total reward will represent how fast the agent can finish all
+        """
         reward = kill_num or -1
-        # reward = -1  # 借鉴MountainCar的reward思路， 不抓到小偷， 一直给-1， 这样总体reward会体现出抓到的快慢
-
         self.reward_hist.append(reward)
-
         return reward
 
     def _cal_dist(self):
@@ -143,10 +138,10 @@ class PoliceKillAllEnv(gym.Env):
     def _reset(self):
         # global observation from god's view
         self.global_ob = {
-            # 警察从地图中间出发， 让其需要随机向任意方向出发
+            # police go from map center, so that it must go toward a random direction to catch thief
             "police": [(random.randint(*self._police_range), random.randint(*self._police_range))
                        for _ in range(self.team_size["police"])],
-            # 让小偷在地图四周
+            # make thief away from center
             "thief": [self.add_one_thief() for _ in range(self.team_size["thief"])],
 
         }
@@ -164,19 +159,19 @@ class PoliceKillAllEnv(gym.Env):
     def everybody_move(self, cur_state, police_action):
         """Run move logic for all, only move, no other action"""
         # the target will run out of me as far as possible
-        # 要么走x， 要么走y，先看边界，再选距离， 上下左右
+        # either x or y, take care of edge and speed
         new_state = cur_state.copy()
 
         thief_list = cur_state['thief']
         police_list = cur_state['police']
 
-        # 1. 原地不动的小偷
+        # 1. don't move
         if self.adversary_action == "static":
             thief_new_loc = thief_list
-        # 2. 会跑的小偷
+        # 2. simple clever action
         elif self.adversary_action == "simple":
             thief_new_loc = [self._take_simple_action(_thief, police_list, team="thief") for _thief in thief_list]
-        # 3. 随机的行动
+        # 3. random walk
         else:
             thief_new_loc = [self._take_random_action(_thief, team="thief") for _thief in thief_list]
 

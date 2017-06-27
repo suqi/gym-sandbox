@@ -117,7 +117,8 @@ register(
     timestep_limit=100,
 
     kwargs=dict(
-        agent_num=1, agent_team="police", adversary_num=6, map_size=10, adversary_action="static",
+        agent_num=1, agent_team="police", adversary_num=6, map_size=10,
+        adversary_action="static",  # static/simple/random
         state_format='grid3d_ravel',
     )
 )
