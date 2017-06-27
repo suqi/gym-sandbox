@@ -6,6 +6,8 @@ import random
 
 from gym_sandbox.envs.plot import balls_game_dashboard
 
+MOVE_ACTIONS = [[0, -1], [0, 1], [-1, 0], [1, 0]]  # up/down/left/right
+
 
 class PoliceKillAllEnv(gym.Env):
     """
@@ -162,17 +164,14 @@ class PoliceKillAllEnv(gym.Env):
     def _close(self):
         pass
 
-    def _step(self, action):
-        """action in MA env must be a list of actions for each agent"""
-        # int_action = int(action)  # 上下左右 0123
-
-        new_state = self.current_state.copy()
-
-
+    def everybody_move(self, cur_state, police_action):
+        """Run move logic for all, only move, no other action"""
         # the target will run out of me as far as possible
         # 要么走x， 要么走y，先看边界，再选距离， 上下左右
-        thief_list = self.current_state['thief']
-        police_list = self.current_state['police']
+        new_state = cur_state.copy()
+
+        thief_list = cur_state['thief']
+        police_list = cur_state['police']
 
         # 1. 原地不动的小偷
         if self.adversary_action == "static":
@@ -187,34 +186,38 @@ class PoliceKillAllEnv(gym.Env):
         # samely, for me, run to get more close to target
         # police_new_loc = [self._take_simple_action(_police, thief_list, team="police") for _police in police_list]
 
-        # TODO: add stop action
-        directions = [[0, -1], [0, 1], [-1, 0], [1, 0]]  # 上下左右
-        action_dir = np.array(directions[action])
+        if police_action < len(MOVE_ACTIONS):
+            # TODO: add stop action
+            action_dir = np.array(MOVE_ACTIONS[police_action])
 
-        police_speed = self.TEAMS['police']['speed']
-        police_dir = action_dir * police_speed
+            police_speed = self.TEAMS['police']['speed']
+            police_dir = action_dir * police_speed
 
-        p1 = police_list[0]
-        p1 = (p1[0] + police_dir[0], p1[1] + police_dir[1])
-        p1 = self.ensure_inside(p1)
-        police_new_loc = [p1]
+            p1 = police_list[0]
+            p1 = (p1[0] + police_dir[0], p1[1] + police_dir[1])
+            p1 = self.ensure_inside(p1)
+            police_new_loc = [p1]
+        else:
+            police_new_loc = police_list
 
         new_state['thief'] = thief_new_loc
         new_state['police'] = police_new_loc
+        return new_state
+
+    def _step(self, action):
+        """firstly move, then check distance"""
+        new_state = self.everybody_move(self.current_state, action)
+        new_state = self.check_thief_caught(new_state)
+        kill_num = len(self.current_state["thief"]) - len(new_state["thief"])
+        self.current_is_caught = kill_num > 0
 
         self.last_state = self.current_state
         self.current_state = new_state
         # self.current_action = step_action
         self.elapsed_steps += 1
 
-        # check and update state
-        kill_num = self.check_thief_caught()
-        self.current_is_caught = kill_num > 0
-
         ob = self._trans_state(self.current_state)
-
         self.current_done = self._cal_done(self.current_state, kill_num)
-
         reward = self._cal_reward(kill_num, self.current_done)
 
         return ob, reward, self.current_done, None
@@ -225,12 +228,14 @@ class PoliceKillAllEnv(gym.Env):
         y = self.map_size if y > self.map_size else 0 if y < 0 else y
         return (x, y)
 
-    def check_thief_caught(self):
+    def check_thief_caught(self, cur_state):
         """override attention: must return thief caught num of this step
         Attention: state will be change here!
         """
-        thief_list = self.current_state['thief']
-        police_list = self.current_state['police']
+        new_state = cur_state.copy()
+
+        thief_list = new_state['thief']
+        police_list = new_state['police']
 
         survived_thief_list = []
         for _thief in thief_list:
@@ -239,9 +244,9 @@ class PoliceKillAllEnv(gym.Env):
             if not closed_police:
                 survived_thief_list.append(_thief)
 
-        self.current_state['thief'] = survived_thief_list
+        new_state['thief'] = survived_thief_list
 
-        return len(thief_list) - len(survived_thief_list)  # 击杀个数
+        return new_state
 
     def _get_avail_new_loc(self, my_pos, my_speed):
         x, y = my_pos
