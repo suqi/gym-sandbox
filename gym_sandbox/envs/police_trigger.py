@@ -40,5 +40,7 @@ class PoliceTriggerEnv(PoliceKillAllEnv):
         self.current_done = self._cal_done(self.current_state, kill_num)
         reward = self._cal_reward(kill_num, self.current_done)
 
-        return ob, reward, self.current_done, None
+        info = self._get_step_info()
+
+        return ob, reward, self.current_done, info
 

@@ -81,6 +81,20 @@ class PoliceKillAllEnv(gym.Env):
         self.current_is_caught = False  # used for render
         self.elapsed_steps = 0
 
+        # overwrite spaces setup for openai a3c usage.
+        # depends on some self.**** variables, so put it at the end of the code block.
+        if state_format == 'grid3d':
+            self.observation_space = gym.spaces.Box(
+                float(0), float(1), self._get_zero_grid().shape)
+        else:
+            # don't know how to handle it yet
+            # self.observation_space = gym.spaces.Box(
+            #     float("-inf"), float("inf"), (self.STATE_DIM,))
+            pass
+
+        # for statistic usage
+        self.total_reward_last_10 = []
+
     def init_params(self, show_dashboard=True):
         """to control something after env is made"""
         self.game_dashboard = balls_game_dashboard.BallsGameDashboard(
@@ -212,7 +226,9 @@ class PoliceKillAllEnv(gym.Env):
         self.current_done = self._cal_done(self.current_state, kill_num)
         reward = self._cal_reward(kill_num, self.current_done)
 
-        return ob, reward, self.current_done, None
+        info = self._get_step_info()
+
+        return ob, reward, self.current_done, info
 
     def ensure_inside(self, cord):
         x, y = cord
@@ -299,6 +315,11 @@ class PoliceKillAllEnv(gym.Env):
         # eucl_dist = np.sqrt(np.sum((_coords1 - _coords2) ** 2))
         # return eucl_dist
 
+    def _get_zero_grid(self):
+        grid_num = self.map_size * self.grid_scale
+        thematrix = np.zeros((grid_num, grid_num, self.grid_depth))
+        return thematrix
+
     def build_grid(self, state):
         """transform raw state into a grid-based n-depth matrix"""
         # a grid with depth/channel like a image file
@@ -306,9 +327,7 @@ class PoliceKillAllEnv(gym.Env):
         # attention: all grid closed to edge must include position on edge line!
 
         # step1. construct a matrix of data object
-        grid_num = self.map_size * self.grid_scale
-
-        thematrix = np.zeros((grid_num, grid_num, self.grid_depth))
+        thematrix = self._get_zero_grid()
 
         # step2. analyze state and append data attribute to each object
 
@@ -341,3 +360,20 @@ class PoliceKillAllEnv(gym.Env):
 
     def close(self, *args, **kwargs):
         pass  # close will trigger render(don't need it in many case)
+
+    def _get_step_info(self):
+        info = {}
+        if self.current_done:
+            total_reward = sum(self.reward_hist)
+            self.total_reward_last_10.append(total_reward)
+            if len(self.total_reward_last_10) > 10:
+                print(self.total_reward_last_10)
+                self.total_reward_last_10.pop(0)
+                print(self.total_reward_last_10)
+
+            info["total_reward"] = total_reward
+            info["total_steps"] = self.elapsed_steps
+            info["total_episode"] = self.episode_count
+            info["total_reward_average_last_10"] = sum(self.total_reward_last_10) / len(self.total_reward_last_10)
+
+        return info
