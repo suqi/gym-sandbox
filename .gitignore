@@ -80,7 +80,7 @@ checkpoint
 .keras
 
 # gym RL env
-gym_sandbox/local_env_list.py
+# gym_sandbox/local_env_list.py
 
 # pyenv
 .python-version
