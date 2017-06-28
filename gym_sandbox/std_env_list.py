@@ -1,5 +1,7 @@
 """
-Here're all the env name you can use!
+---- Don't change this file ----
+Here're all the standard env you can use!
+If you want to customize, please add your own in local_env_list.py file
 
 Just do:
 >>> import gym_sandbox
