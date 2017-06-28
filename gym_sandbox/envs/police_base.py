@@ -6,9 +6,12 @@ import random
 
 from gym_sandbox.envs.plot import balls_game_dashboard
 
+MOVE_ACTIONS = [[0, -1], [0, 1], [-1, 0], [1, 0]]  # up/down/left/right
+
 
 class PoliceKillAllEnv(gym.Env):
     """
+    Police catch Thief
     Copied from multiagent_balls, difference is
     1. police must kill all thief
     2. only support grid state! because thief list order is not managed
@@ -39,7 +42,12 @@ class PoliceKillAllEnv(gym.Env):
         agent_team: police/thief
         state_format: grid3d/grid3d_ravel/cord_list_unfixed/cord_list_fixed_500
         adversary_action: static/simple/random
+        Note: for simplicity, the map is a square
         """
+        self.action_space = gym.spaces.Discrete(len(MOVE_ACTIONS))
+        # self.observation_space = gym.spaces.Box(
+        #     float("-inf"), float("inf"), (self.STATE_DIM,))
+
         self.game_dashboard = None
 
         self.map_size = map_size
@@ -70,20 +78,11 @@ class PoliceKillAllEnv(gym.Env):
         self.current_state = None
         self.current_action = None
         self.reward_hist = []
-        self.current_is_caught = False # 用来在渲染的时候展示被抓住了
+        self.current_is_caught = False  # used for render
         self.elapsed_steps = 0
 
-        # observation will be a list of agent_num
-        # self.observation_space = gym.spaces.Box(
-        #     float("-inf"), float("inf"), (self.STATE_DIM,))
-        #
-        # # {move_up, move_right, move_left, move_down,}
-        # self.action_space = gym.spaces.Discrete(self.ACTION_DIM)
-
     def init_params(self, show_dashboard=True):
-        """You can be in police/thief team (警察抓小偷)
-        为了简化， 先用正方形即可， 因为跟长方形没有区别
-        """
+        """to control something after env is made"""
         self.game_dashboard = balls_game_dashboard.BallsGameDashboard(
             self.map_size, self.team_size) if show_dashboard else None
 
@@ -106,18 +105,13 @@ class PoliceKillAllEnv(gym.Env):
             return channel_grids.ravel() if self.state_format == "grid3d_ravel" else channel_grids
 
     def _cal_reward(self, kill_num, is_done):
-        # if is_thief_caught:
-        #     reward = self.WIN_REWARD
-        # else:
-        #     if is_done:
-        #         reward = self.LOSE_REWARD
-        #     else:
-        #         reward = 0
+        """
+        w.r.t idea of MountainCar
+        if no thief caught, always -1
+        so that total reward will represent how fast the agent can finish all
+        """
         reward = kill_num or -1
-        # reward = -1  # 借鉴MountainCar的reward思路， 不抓到小偷， 一直给-1， 这样总体reward会体现出抓到的快慢
-
         self.reward_hist.append(reward)
-
         return reward
 
     def _cal_dist(self):
@@ -144,10 +138,10 @@ class PoliceKillAllEnv(gym.Env):
     def _reset(self):
         # global observation from god's view
         self.global_ob = {
-            # 警察从地图中间出发， 让其需要随机向任意方向出发
+            # police go from map center, so that it must go toward a random direction to catch thief
             "police": [(random.randint(*self._police_range), random.randint(*self._police_range))
                        for _ in range(self.team_size["police"])],
-            # 让小偷在地图四周
+            # make thief away from center
             "thief": [self.add_one_thief() for _ in range(self.team_size["thief"])],
 
         }
@@ -162,59 +156,60 @@ class PoliceKillAllEnv(gym.Env):
     def _close(self):
         pass
 
-    def _step(self, action):
-        """action in MA env must be a list of actions for each agent"""
-        # int_action = int(action)  # 上下左右 0123
-
-        new_state = self.current_state.copy()
-
-
+    def everybody_move(self, cur_state, police_action):
+        """Run move logic for all, only move, no other action"""
         # the target will run out of me as far as possible
-        # 要么走x， 要么走y，先看边界，再选距离， 上下左右
-        thief_list = self.current_state['thief']
-        police_list = self.current_state['police']
+        # either x or y, take care of edge and speed
+        new_state = cur_state.copy()
 
-        # 1. 原地不动的小偷
+        thief_list = cur_state['thief']
+        police_list = cur_state['police']
+
+        # 1. don't move
         if self.adversary_action == "static":
             thief_new_loc = thief_list
-        # 2. 会跑的小偷
+        # 2. simple clever action
         elif self.adversary_action == "simple":
             thief_new_loc = [self._take_simple_action(_thief, police_list, team="thief") for _thief in thief_list]
-        # 3. 随机的行动
+        # 3. random walk
         else:
             thief_new_loc = [self._take_random_action(_thief, team="thief") for _thief in thief_list]
 
         # samely, for me, run to get more close to target
         # police_new_loc = [self._take_simple_action(_police, thief_list, team="police") for _police in police_list]
 
-        # TODO: add stop action
-        directions = [[0, -1], [0, 1], [-1, 0], [1, 0]]  # 上下左右
-        action_dir = np.array(directions[action])
+        if police_action < len(MOVE_ACTIONS):
+            # TODO: add stop action
+            action_dir = np.array(MOVE_ACTIONS[police_action])
 
-        police_speed = self.TEAMS['police']['speed']
-        police_dir = action_dir * police_speed
+            police_speed = self.TEAMS['police']['speed']
+            police_dir = action_dir * police_speed
 
-        p1 = police_list[0]
-        p1 = (p1[0] + police_dir[0], p1[1] + police_dir[1])
-        p1 = self.ensure_inside(p1)
-        police_new_loc = [p1]
+            p1 = police_list[0]
+            p1 = (p1[0] + police_dir[0], p1[1] + police_dir[1])
+            p1 = self.ensure_inside(p1)
+            police_new_loc = [p1]
+        else:
+            police_new_loc = police_list
 
         new_state['thief'] = thief_new_loc
         new_state['police'] = police_new_loc
+        return new_state
+
+    def _step(self, action):
+        """firstly move, then check distance"""
+        new_state = self.everybody_move(self.current_state, action)
+        new_state = self.check_thief_caught(new_state)
+        kill_num = len(self.current_state["thief"]) - len(new_state["thief"])
+        self.current_is_caught = kill_num > 0
 
         self.last_state = self.current_state
         self.current_state = new_state
-        # self.current_action = step_action
+        self.current_action = action
         self.elapsed_steps += 1
 
-        # check and update state
-        kill_num = self.check_thief_caught()
-        self.current_is_caught = kill_num > 0
-
         ob = self._trans_state(self.current_state)
-
         self.current_done = self._cal_done(self.current_state, kill_num)
-
         reward = self._cal_reward(kill_num, self.current_done)
 
         return ob, reward, self.current_done, None
@@ -225,12 +220,14 @@ class PoliceKillAllEnv(gym.Env):
         y = self.map_size if y > self.map_size else 0 if y < 0 else y
         return (x, y)
 
-    def check_thief_caught(self):
+    def check_thief_caught(self, cur_state):
         """override attention: must return thief caught num of this step
         Attention: state will be change here!
         """
-        thief_list = self.current_state['thief']
-        police_list = self.current_state['police']
+        new_state = cur_state.copy()
+
+        thief_list = new_state['thief']
+        police_list = new_state['police']
 
         survived_thief_list = []
         for _thief in thief_list:
@@ -239,9 +236,9 @@ class PoliceKillAllEnv(gym.Env):
             if not closed_police:
                 survived_thief_list.append(_thief)
 
-        self.current_state['thief'] = survived_thief_list
+        new_state['thief'] = survived_thief_list
 
-        return len(thief_list) - len(survived_thief_list)  # 击杀个数
+        return new_state
 
     def _get_avail_new_loc(self, my_pos, my_speed):
         x, y = my_pos
@@ -282,7 +279,7 @@ class PoliceKillAllEnv(gym.Env):
             return
 
         env_data = [self.current_state, self.reward_hist, self.episode_count,
-                    len(self.reward_hist), self.current_is_caught, self.current_done]
+                    len(self.reward_hist), self.current_action, self.current_is_caught, self.current_done]
         if self.game_dashboard:
             self.game_dashboard.update_plots(env_data)
         return
