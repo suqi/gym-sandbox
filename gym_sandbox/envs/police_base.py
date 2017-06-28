@@ -368,9 +368,7 @@ class PoliceKillAllEnv(gym.Env):
             total_reward = sum(self.reward_hist)
             self.total_reward_last_10.append(total_reward)
             if len(self.total_reward_last_10) > 10:
-                print(self.total_reward_last_10)
                 self.total_reward_last_10.pop(0)
-                print(self.total_reward_last_10)
 
             info["total_reward"] = total_reward
             info["total_steps"] = self.elapsed_steps
