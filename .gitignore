@@ -79,6 +79,9 @@ target/
 checkpoint
 .keras
 
+# gym RL env
+local_env_list.py
+
 # pyenv
 .python-version
 
