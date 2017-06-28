@@ -44,10 +44,6 @@ class PoliceKillAllEnv(gym.Env):
         adversary_action: static/simple/random
         Note: for simplicity, the map is a square
         """
-        self.action_space = gym.spaces.Discrete(len(MOVE_ACTIONS))
-        # self.observation_space = gym.spaces.Box(
-        #     float("-inf"), float("inf"), (self.STATE_DIM,))
-
         self.game_dashboard = None
 
         self.map_size = map_size
@@ -83,14 +79,18 @@ class PoliceKillAllEnv(gym.Env):
 
         # overwrite spaces setup for openai a3c usage.
         # depends on some self.**** variables, so put it at the end of the code block.
+        self.action_space = gym.spaces.Discrete(len(MOVE_ACTIONS))
         if state_format == 'grid3d':
             self.observation_space = gym.spaces.Box(
                 float(0), float(1), self._get_zero_grid().shape)
+        elif state_format == 'grid3d_ravel':
+            self.observation_space = gym.spaces.Box(
+                float(0), float(1), self._get_zero_grid().ravel().shape)
+        elif state_format == 'cord_list_fixed_500':
+            self.observation_space = gym.spaces.Box(
+                float(0), float(1), (500*2,))
         else:
-            # don't know how to handle it yet
-            # self.observation_space = gym.spaces.Box(
-            #     float("-inf"), float("inf"), (self.STATE_DIM,))
-            pass
+            self.observation_space = None
 
         # for statistic usage
         self.total_reward_last_10 = []
