@@ -123,7 +123,7 @@ class Worker(object):
             ep_r = 0
 
             # 每100回合保存训练参数
-            if (GLOBAL_EP+1) % 10000 == 0 and RUN_MODE == 'training':
+            if self.name == 'W_0' and (GLOBAL_EP+1) % 10000 == 0 and RUN_MODE == 'training':
                 saver.save(SESS, ".tf-models/a3c-1vn-dynamic", global_step=GLOBAL_EP)
 
             while True:

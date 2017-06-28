@@ -36,5 +36,7 @@ So we must ensure we can solve each sub-task, and then we have the confidence to
 - Multi-agent
     - Inspired by MADDPG
 
+## Credit
+OpenAI's universe-starter-agent is a very cool project, where there're many good point of engineering design.
 
 
