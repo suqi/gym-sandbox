@@ -7,12 +7,13 @@ import os
 import shutil
 import matplotlib.pyplot as plt
 import gym_sandbox
+import multiprocessing
 import time
 
-GAME = 'MA-BALLS-1v1-grid-v0'
+GAME = 'police-killall-trigger-3dgrid-v0'
 OUTPUT_GRAPH = True
 LOG_DIR = './log'
-N_WORKERS = 1
+N_WORKERS = multiprocessing.cpu_count()
 MAX_GLOBAL_EP = 30000
 GLOBAL_NET_SCOPE = 'Global_Net'
 UPDATE_GLOBAL_ITER = 20
@@ -27,26 +28,27 @@ RUN_MODE = "training" # execution
 
 env = gym.make(GAME)
 _s = env.reset()
-N_S = _s.shape[0] # env.observation_space.shape[0]
-N_A = 4 #env.action_space.n
-
+N_S = list(_s.shape) #
+N_A = env.action_space.n
+WIDTH = _s.shape[0]
 
 class ACNet(object):
     def __init__(self, scope, globalAC=None):
 
         if scope == GLOBAL_NET_SCOPE:  # get global network
             with tf.variable_scope(scope):
-                self.s = tf.placeholder(tf.float32, [None, N_S], 'S')
+                self.s = tf.placeholder(tf.float32, [None]+N_S, 'S')
                 self._build_net()
                 self.a_params = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=scope + '/actor')
                 self.c_params = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=scope + '/critic')
         else:  # local net, calculate losses
             with tf.variable_scope(scope):
-                self.s = tf.placeholder(tf.float32, [None, N_S], 'S')
+                self.s = tf.placeholder(tf.float32, [None]+N_S, 'S')
                 self.a_his = tf.placeholder(tf.int32, [None, ], 'A')
                 self.v_target = tf.placeholder(tf.float32, [None, 1], 'Vtarget')
 
                 self.a_prob, self.v = self._build_net()
+                self.a_prob = tf.clip_by_value(self.a_prob, 1e-6,1)
 
                 td = tf.subtract(self.v_target, self.v, name='TD_error')
                 with tf.name_scope('c_loss'):
@@ -78,11 +80,19 @@ class ACNet(object):
     def _build_net(self):
         w_init = tf.random_normal_initializer(0., .1)
         with tf.variable_scope('actor'):
-            l_a = tf.layers.dense(self.s, 200, tf.nn.relu6, kernel_initializer=w_init, name='la')
-            a_prob = tf.layers.dense(l_a, N_A, tf.nn.softmax, kernel_initializer=w_init, name='ap')
+            conv1 = tf.layers.conv2d(self.s,32,[3,3],[2,2],kernel_initializer=w_init,activation=tf.nn.relu6,name='conv1')
+            #conv2 = tf.layers.conv2d(conv1,32,[2,2],[1,1],kernel_initializer=w_init,activation=tf.nn.relu6,name='conv2')
+            W = int((WIDTH-3)/2+1)
+            conv1 = tf.reshape(conv1,[-1,32*W*W])
+            f1 = tf.layers.dense(conv1,200,kernel_initializer=w_init,activation=tf.nn.relu6,name='f1')
+            a_prob = tf.layers.dense(f1, N_A, tf.nn.softmax, kernel_initializer=w_init, name='ap')
         with tf.variable_scope('critic'):
-            l_c = tf.layers.dense(self.s, 100, tf.nn.relu6, kernel_initializer=w_init, name='lc')
-            v = tf.layers.dense(l_c, 1, kernel_initializer=w_init, name='v')  # state value
+            conv1 = tf.layers.conv2d(self.s,32,[3,3],[2,2],kernel_initializer=w_init,activation=tf.nn.relu6,name='conv1')
+            #conv2 = tf.layers.conv2d(conv1,32,[2,2],[1,1],kernel_initializer=w_init,activation=tf.nn.relu6,name='conv2')
+            W = int((WIDTH-3)/2+1)
+            conv1 = tf.reshape(conv1,[-1,32*W*W])
+            f1 = tf.layers.dense(conv1,100,kernel_initializer=w_init,activation=tf.nn.relu6,name='f1')
+            v = tf.layers.dense(f1,1, kernel_initializer=w_init, name='v')  # state value
         return a_prob, v
 
     def update_global(self, feed_dict):  # run by a local
@@ -119,10 +129,11 @@ class Worker(object):
 
             while True:
                 a = self.AC.choose_action(s)
+
                 s_, r, done, info = self.env.step(a)
 
                 if self.name == 'W_0':
-                    show_interval = GLOBAL_EP % 1000 == 0
+                    show_interval = GLOBAL_EP+1 % 10000 == 0
                     nice = GLOBAL_RUNNING_R and GLOBAL_RUNNING_R[-1] >= -10
                     if show_interval or nice or RUN_MODE=='execution':
                         self.env.render()
@@ -154,6 +165,7 @@ class Worker(object):
 
                     buffer_s, buffer_a, buffer_v_target = np.vstack(buffer_s), np.array(buffer_a), np.vstack(
                         buffer_v_target)
+                    buffer_s = np.reshape(buffer_s,[-1]+N_S)
                     feed_dict = {
                         self.AC.s: buffer_s,
                         self.AC.a_his: buffer_a,
@@ -171,11 +183,11 @@ class Worker(object):
                         GLOBAL_RUNNING_R.append(ep_r)
                     else:
                         GLOBAL_RUNNING_R.append(0.99 * GLOBAL_RUNNING_R[-1] + 0.01 * ep_r)
-                    # print(
-                    #     self.name,
-                    #     "Ep:", GLOBAL_EP,
-                    #     "| Ep_r: %i" % GLOBAL_RUNNING_R[-1],
-                    # )
+                    print(
+                        self.name,
+                        "Ep:", GLOBAL_EP,
+                        "| Ep_r: %i" % GLOBAL_RUNNING_R[-1],
+                    )
                     GLOBAL_EP += 1
                     break
 

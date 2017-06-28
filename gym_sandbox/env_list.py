@@ -99,19 +99,6 @@ register(
 )
 
 register(
-    id='police-killall-grid-v0',
-    entry_point='gym_sandbox.envs.police_base:PoliceKillAllEnv',
-    timestep_limit=100,
-
-    kwargs = dict(
-        agent_num=1, agent_team="police", adversary_num=6, map_size=10, adversary_action="simple",
-        state_format='grid3d',
-    )
-    # reward_threshold=1.0,
-    # nondeterministic = True,
-)
-
-register(
     id='police-killall-random-3dravel-v0',
     entry_point='gym_sandbox.envs.police_kill_all_random:RandomBallsEnv',
     timestep_limit=100,
@@ -130,20 +117,20 @@ register(
     timestep_limit=100,
 
     kwargs=dict(
-        agent_num=1, agent_team="police", adversary_num=6, map_size=10,
-        adversary_action="static",  # static/simple/random
+        agent_num=1, agent_team="police", adversary_num=5, map_size=20,
+        adversary_action="random",  # static/simple/random
         state_format='grid3d_ravel',
     )
 )
 
 register(
-    id='police-killall-trigger-3d-v0',
+    id='police-killall-trigger-3dgrid-v0',
     entry_point='gym_sandbox.envs.police_trigger:PoliceTriggerEnv',
     timestep_limit=100,
 
     kwargs=dict(
-        agent_num=1, agent_team="police", adversary_num=6, map_size=20,
-        adversary_action="simple",  # static/simple/random
+        agent_num=1, agent_team="police", adversary_num=5, map_size=20,
+        adversary_action="random",  # static/simple/random
         state_format='grid3d',
     )
 )
