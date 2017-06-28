@@ -8,7 +8,7 @@ import shutil
 import matplotlib.pyplot as plt
 import gym_sandbox
 import time
-
+import multiprocessing
 # GAME = 'police-killone-static-v0'
 # GAME = 'police-killone-dynamic-v0'
 # GAME = 'police-killone-ravel-v0'
@@ -19,7 +19,7 @@ GAME = 'police-killall-trigger-3dravel-v0'
 
 OUTPUT_GRAPH = True
 LOG_DIR = './.tf-log'
-N_WORKERS = 2
+N_WORKERS = multiprocessing.cpu_count()
 MAX_GLOBAL_EP = 30000
 GLOBAL_NET_SCOPE = 'Global_Net'
 UPDATE_GLOBAL_ITER = 20
@@ -60,6 +60,7 @@ class ACNet(object):
                     self.c_loss = tf.reduce_mean(tf.square(td))
 
                 with tf.name_scope('a_loss'):
+                    self.a_prob = tf.clip_by_value(self.a_prob, 1e-6, 1)
                     log_prob = tf.reduce_sum(tf.log(self.a_prob) * tf.one_hot(self.a_his, N_A, dtype=tf.float32),
                                              axis=1, keep_dims=True)
                     exp_v = log_prob * td
@@ -100,6 +101,7 @@ class ACNet(object):
 
     def choose_action(self, s):  # run by a local
         prob_weights = SESS.run(self.a_prob, feed_dict={self.s: s[np.newaxis, :]})
+        #print(prob_weights)
         action = np.random.choice(range(prob_weights.shape[1]),  # first digit is batch size, drop it
                                   p=prob_weights.ravel())  # select action w.r.t the actions prob
         return action
@@ -121,7 +123,7 @@ class Worker(object):
             ep_r = 0
 
             # 每100回合保存训练参数
-            if GLOBAL_EP % 1000 == 0 and RUN_MODE == 'training':
+            if (GLOBAL_EP+1) % 10000 == 0 and RUN_MODE == 'training':
                 saver.save(SESS, ".tf-models/a3c-1vn-dynamic", global_step=GLOBAL_EP)
 
             while True:
@@ -129,9 +131,9 @@ class Worker(object):
                 s_, r, done, info = self.env.step(a)
 
                 if self.name == 'W_0':
-                    # show_interval = GLOBAL_EP % 10 == 0
+                    show_interval = GLOBAL_EP % 1000 == 0
                     # nice = GLOBAL_RUNNING_R and GLOBAL_RUNNING_R[-1] >= -10
-                    if True: # show_interval or nice or RUN_MODE=='execution':
+                    if show_interval:
                         self.env.render()
 
                         time.sleep(0.2)
@@ -177,16 +179,17 @@ class Worker(object):
                         GLOBAL_RUNNING_R.append(ep_r)
                     else:
                         GLOBAL_RUNNING_R.append(0.99 * GLOBAL_RUNNING_R[-1] + 0.01 * ep_r)
-                    # print(
-                    #     self.name,
-                    #     "Ep:", GLOBAL_EP,
-                    #     "| Ep_r: %i" % GLOBAL_RUNNING_R[-1],
-                    # )
+                    print(
+                        self.name,
+                        "Ep:", GLOBAL_EP,
+                        "| Ep_r: %i" % GLOBAL_RUNNING_R[-1],
+                    )
                     GLOBAL_EP += 1
                     break
 
 
 SESS = tf.Session()
+
 
 with tf.device("/cpu:0"):
     OPT_A = tf.train.RMSPropOptimizer(LR_A, name='RMSPropA')
