@@ -326,6 +326,7 @@ class PoliceKillAllEnv(gym.Env):
                 _channel = PoliceKillAllEnv.GRID_CHANNALS[team]["num"]
                 thematrix[tuple(_grid_cord)][_channel] += 1
 
+        thematrix[:, :, 1] /= self.adversary_num
         return thematrix
 
     def _get_grid_cord(self, raw_cord):
