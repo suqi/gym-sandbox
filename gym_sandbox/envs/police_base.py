@@ -28,7 +28,7 @@ class PoliceKillAllEnv(gym.Env):
         "thief": {"speed": 1},
     }
     GRID_CHANNALS = {
-        "police":{
+        "police": {
             "num": 0
         },
         "thief": {
@@ -36,7 +36,7 @@ class PoliceKillAllEnv(gym.Env):
         }
     }
 
-    def __init__(self,  agent_num=5, agent_team="police", adversary_num=2, map_size=200,
+    def __init__(self, agent_num=5, agent_team="police", adversary_num=2, map_size=200,
                  adversary_action="static", state_format='grid3d'):
         """the init params should be passed in by code of env registering
         agent_team: police/thief
@@ -105,9 +105,9 @@ class PoliceKillAllEnv(gym.Env):
             # output a fixed size of cord list, if empty, add (0,0)
             result = list()
             for _p in state["police"]:
-                result.extend(np.array(_p)/self.map_size)
+                result.extend(np.array(_p) / self.map_size)
             for _t in state["thief"]:
-                result.extend(np.array(_t)/self.map_size)
+                result.extend(np.array(_t) / self.map_size)
 
             if self.state_format == "cord_list_fixed_500":
                 for _ in range(500 - len(state["police"]) - len(state["thief"])):
@@ -341,6 +341,9 @@ class PoliceKillAllEnv(gym.Env):
 
                 _channel = PoliceKillAllEnv.GRID_CHANNALS[team]["num"]
                 thematrix[tuple(_grid_cord)][_channel] += 1
+
+        thematrix[:, :, PoliceKillAllEnv.GRID_CHANNALS["thief"]["num"]] /= self.adversary_num
+
         return thematrix
 
     def _get_grid_cord(self, raw_cord):
