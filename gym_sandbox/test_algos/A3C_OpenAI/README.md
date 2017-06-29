@@ -8,4 +8,7 @@ python train.unix.py --num-workers 2 --env-id police-killall-trigger-3d-v0 --log
 
 
 For windows env:
-TODO
+```
+python train.windows.py --num-workers 2 --env-id police-killall-trigger-3d-v0 --log-dir ./log/
+```
+
