@@ -147,3 +147,15 @@ register(
         state_format='grid3d',
     )
 )
+
+register(
+    id='police-bokeh-server-v0',
+    entry_point='gym_sandbox.envs.police_new_render:PoliceBokehServerEnv',
+    timestep_limit=100,
+
+    kwargs=dict(
+        agent_num=1, agent_team="police", adversary_num=3, map_size=10,
+        adversary_action="random",  # static/simple/random
+        state_format='grid3d_ravel',
+    )
+)
