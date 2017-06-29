@@ -7,10 +7,9 @@ import random
 # choose a env name from env_list
 # env = gym.make("police-killall-ravel-v0")
 # env = gym.make("police-killall-static-cords-500-v0")
-# env = gym.make("police-killall-trigger-3dravel-v0")
-env = gym.make("police-bokeh-server-v0")
+env = gym.make("police-killall-trigger-3dravel-v0")
 
-env.env.init_params(show_dashboard=True)
+env.env.init_params(show_dashboard=True, bokeh_output="standalone")
 
 print("action shape >>> ", env.action_space.n)
 
