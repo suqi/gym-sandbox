@@ -11,6 +11,7 @@ from bokeh.layouts import gridplot
 
 from tornado.ioloop import IOLoop
 import yaml
+import threading
 
 import numpy as np
 import random
@@ -30,13 +31,18 @@ THIEF_RADIUS = 0.02
 
 
 class BallsBokehServer:
-    """A game dashboard to show the game state"""
+    """A game dashboard to show the game state
+
+    """
 
     def __init__(self, map_size, team_size):
         self.map_size = map_size
         self.team_size = team_size
         self.global_running_r = []
-        self.start_server()
+
+        # TODO: currently we are using threading, use process or other later
+        t = threading.Thread(target=self.start_server)
+        t.start()
 
     def modify_doc(self, doc):
         map_size = self.map_size
