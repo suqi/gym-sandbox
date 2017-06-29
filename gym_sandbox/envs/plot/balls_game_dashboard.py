@@ -19,23 +19,28 @@ POLICE_RADIUS = 0.05  # percent of map size
 THIEF_RADIUS = 0.02
 
 
-class BallsGameDashboard:
+class BallsNotebookRender:
     """A game dashboard to show the game state"""
 
     def __init__(self, map_size, team_size):
+        self.draw_init_plot(map_size, team_size)
+
+        output_notebook()
+        self.nb_handle = show(self.plt_combo, notebook_handle=True)
+
+    def draw_init_plot(self, map_size, team_size):
         self.map_size = map_size
         self.team_size = team_size
         self.global_running_r = []
 
-        output_notebook()
         _x_min, _y_min, _x_max, _y_max = 0, 0, map_size, map_size
         plt_loc = figure(
             plot_width=600,
             plot_height=600,
             # toolbar_location=None,
             # slightly show 10% more of boundary
-            x_range=(_x_min-map_size/10, _x_max+map_size/10),
-            y_range=(_y_max+map_size/10, _y_min-map_size/10),
+            x_range=(_x_min - map_size / 10, _x_max + map_size / 10),
+            y_range=(_y_max + map_size / 10, _y_min - map_size / 10),
             x_axis_location="above",
             title="step #0")  # use up-left corner as origin
         plt_loc.title.align = "center"
@@ -49,17 +54,20 @@ class BallsGameDashboard:
                      y=[_y_min, _y_min, _y_max, _y_max, _y_min],
                      line_color="navy", line_alpha=0.3, line_dash="dotted", line_width=2)
 
-        self.police_num, self.thief_num = team_size['police'], 1000 #team_size['thief'] # TODO: must give a biggest num
+        self.police_num, self.thief_num = team_size[
+                                              'police'], 1000  # team_size['thief'] # TODO: must give a biggest num
         self.total_num = self.police_num + self.thief_num
 
         # draw balls
         self.rd_loc = plt_loc.circle(
             [-1] * self.total_num, [-1] * self.total_num,
-            radius=[POLICE_RADIUS*map_size] * self.police_num + [THIEF_RADIUS*map_size] * self.thief_num,  # radius is by percent
+            radius=[POLICE_RADIUS * map_size] * self.police_num + [
+                                                                      THIEF_RADIUS * map_size] * self.thief_num,
+            # radius is by percent
             # size=[50]*self.police_num + [20]*self.thief_num,  # size is px
             line_color="gold",
-            line_width=[10]*self.police_num + [1]*self.thief_num,
-            fill_color=["green"]*self.police_num + ["yellow"]*self.thief_num,
+            line_width=[10] * self.police_num + [1] * self.thief_num,
+            fill_color=["green"] * self.police_num + ["yellow"] * self.thief_num,
             fill_alpha=0.6)
 
         # 显示reward趋势
@@ -74,16 +82,17 @@ class BallsGameDashboard:
             [1], [10], line_width=2)
 
         # put all the plots in a gridplot
-        plt_combo = gridplot(
+        self.plt_combo = gridplot(
             [[plt_loc, plt_reward]],
             # toolbar_location=None
         )
 
-        # show the results
-        self.nb_handle = show(plt_combo, notebook_handle=True)
-
     def update_plots(self, env_state_action):
         """update bokeh plots according to new env state and action data"""
+        self.draw_new_plot(env_state_action)
+        push_notebook()  # self.nb_handle
+
+    def draw_new_plot(self, env_state_action):
         global_ob, rewards, ep_count, current_step, cur_action, current_is_caught, current_done = env_state_action
         self.police_num = len(global_ob['police'])
         self.thief_num = len(global_ob['thief'])
@@ -98,9 +107,11 @@ class BallsGameDashboard:
 
         # blink when game end
         thief_color = "red" if current_is_caught else "yellow"
-        self.rd_loc.data_source.data['fill_color'] = ["green"] * self.police_num + [thief_color] * self.thief_num
+        self.rd_loc.data_source.data['fill_color'] = ["green"] * self.police_num + [
+                                                                                       thief_color] * self.thief_num
         thief_lw = 3 if current_is_caught else 1
-        self.rd_loc.data_source.data['line_width'] = [10] * self.police_num + [thief_lw] * self.thief_num
+        self.rd_loc.data_source.data['line_width'] = [10] * self.police_num + [
+                                                                                  thief_lw] * self.thief_num
 
         if current_done:
             ep_reward = sum(rewards)
@@ -113,5 +124,3 @@ class BallsGameDashboard:
             self.rd_reward.data_source.data['y'] = self.global_running_r
             self.plt_reward.title.text = "episode #{} / last_ep_reward: {:5.1f}".format(
                 ep_count, self.global_running_r[-1])
-
-        push_notebook()  # self.nb_handle
