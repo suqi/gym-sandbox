@@ -4,7 +4,8 @@ import gym.spaces
 import numpy as np
 import random
 
-from gym_sandbox.envs.plot import balls_game_dashboard
+from gym_sandbox.envs.plot.balls_game_dashboard import BallsNotebookRender
+from gym_sandbox.envs.plot.balls_bokeh_serve import BallsBokehServeRender
 
 MOVE_ACTIONS = [[0, -1], [0, 1], [-1, 0], [1, 0]]  # up/down/left/right
 MIN_CATCH_DIST = 3
@@ -90,10 +91,14 @@ class PoliceKillAllEnv(gym.Env):
         # for statistic usage
         self.total_reward_last_10 = []
 
-    def init_params(self, show_dashboard=True):
-        """to control something after env is made"""
-        self.game_dashboard = balls_game_dashboard.BallsGameDashboard(
-            self.map_size, self.team_size) if show_dashboard else None
+    def init_params(self, show_dashboard=True, bokeh_output="notebook"):
+        """to control something after env is made
+        bokeh_output:  notebook/standalone"""
+        self.game_dashboard = None
+        if show_dashboard:
+            _render_cls = BallsNotebookRender if bokeh_output == "notebook" \
+                else BallsBokehServeRender
+            self.game_dashboard = _render_cls(self.map_size, self.team_size)
 
     def _trans_state(self, state):
         if self.state_format in ('cord_list_unfixed', 'cord_list_fixed_500'):
