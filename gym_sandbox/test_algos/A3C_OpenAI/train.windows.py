@@ -42,8 +42,8 @@ if __name__ == "__main__":
     proc = subprocess.Popen(['tensorboard.exe',
                       '--logdir', args.log_dir,
                       '--port', '12345'],
-                     stdout=workerlog,
-                     stderr=workerlog)
+                     stdout=tblog,
+                     stderr=tblog)
     procAll.append(proc)
 
     while True:
