@@ -8,11 +8,6 @@ from gym_sandbox.envs.plot.balls_game_dashboard import BallsNotebookRender
 from gym_sandbox.envs.plot.balls_bokeh_serve import BallsBokehServeRender
 
 MOVE_ACTIONS = [[0, -1], [0, 1], [-1, 0], [1, 0]]  # up/down/left/right
-MIN_CATCH_DIST = 3
-TEAMS = {
-    "police": {"speed": 2},
-    "thief": {"speed": 1},
-}
 GRID_CHANNELS = {
     "police": {
         "num": 0  # total police count
@@ -22,7 +17,6 @@ GRID_CHANNELS = {
     }
 }
 GRID_DEPTH = sum([len(_c) for _c in GRID_CHANNELS.values()])  # num of channels
-GRID_SCALE = 2
 
 
 class PoliceKillAllEnv(gym.Env):
@@ -35,13 +29,19 @@ class PoliceKillAllEnv(gym.Env):
     metadata = {'render.modes': ['human', 'rgb_array']}
 
     def __init__(self, agent_num=5, agent_team="police", adversary_num=2, map_size=200,
-                 adversary_action="static", state_format='grid3d'):
+                 adversary_action="static", state_format='grid3d', police_speed=2, thief_speed=1, grid_scale=2, min_catch_dist=3):
         """the init params should be passed in by code of env registering
         agent_team: police/thief
         state_format: grid3d/grid3d_ravel/cord_list_unfixed/cord_list_fixed_500
         adversary_action: static/simple/random
         Note: for simplicity, the map is a square
         """
+        self.teams = {
+            "police": {"speed": police_speed},
+            "thief": {"speed": thief_speed},
+        }
+        self.grid_scale=grid_scale
+        self.min_catch_dist=min_catch_dist
         self.game_dashboard = None
 
         self.map_size = map_size
@@ -196,7 +196,7 @@ class PoliceKillAllEnv(gym.Env):
             # TODO: add stop action
             action_dir = np.array(MOVE_ACTIONS[police_action])
 
-            police_speed = TEAMS['police']['speed']
+            police_speed = self.teams['police']['speed']
             police_dir = action_dir * police_speed
 
             p1 = police_list[0]
@@ -248,7 +248,7 @@ class PoliceKillAllEnv(gym.Env):
         survived_thief_list = []
         for _thief in thief_list:
             closed_police = [_p for _p in police_list
-                             if self.calc_dist(_thief, _p) <= MIN_CATCH_DIST]
+                             if self.calc_dist(_thief, _p) <= self.min_catch_dist]
             if not closed_police:
                 survived_thief_list.append(_thief)
 
@@ -276,7 +276,7 @@ class PoliceKillAllEnv(gym.Env):
 
     def _take_simple_action(self, my_pos, adversary_list, team="thief"):
         """take a little clever action"""
-        available_loc = self._get_avail_new_loc(my_pos, TEAMS[team]['speed'])
+        available_loc = self._get_avail_new_loc(my_pos, self.teams[team]['speed'])
 
         new_dist = [self.get_position_rating(my_new_pos, adversary_list) for my_new_pos in available_loc]
 
@@ -287,7 +287,7 @@ class PoliceKillAllEnv(gym.Env):
 
     def _take_random_action(self, my_pos, team="thief"):
         """Take a random walk"""
-        available_loc = self._get_avail_new_loc(my_pos, TEAMS[team]['speed'])
+        available_loc = self._get_avail_new_loc(my_pos, self.teams[team]['speed'])
         return random.choice(available_loc)
 
     def _render(self, mode='human', close=False):
@@ -316,7 +316,7 @@ class PoliceKillAllEnv(gym.Env):
         # return eucl_dist
 
     def _get_zero_grid(self):
-        grid_num = self.map_size * GRID_SCALE
+        grid_num = self.map_size * self.grid_scale
         thematrix = np.zeros((grid_num, grid_num, GRID_DEPTH))
         return thematrix
 
@@ -335,7 +335,7 @@ class PoliceKillAllEnv(gym.Env):
 
         # 2.2 add up player's and npc data
 
-        for team in TEAMS.keys():
+        for team in self.teams.keys():
             for _p in state[team]:
                 _grid_cord = self._get_grid_cord(_p)
 
@@ -350,12 +350,12 @@ class PoliceKillAllEnv(gym.Env):
         """According to raw axis position, calc new grid cordination
         note 1 is the raw grid size
         """
-        new_scaled_cord = np.array(raw_cord) * GRID_SCALE
+        new_scaled_cord = np.array(raw_cord) * self.grid_scale
         new_scaled_cord = new_scaled_cord.astype(int)  # transform to grid number
 
         # handle max edge
         for _axis in [0, 1]:
-            if new_scaled_cord[_axis] == self.map_size * GRID_SCALE:
+            if new_scaled_cord[_axis] == self.map_size * self.grid_scale:
                 new_scaled_cord[_axis] = new_scaled_cord[_axis] - 1
         return new_scaled_cord
 
