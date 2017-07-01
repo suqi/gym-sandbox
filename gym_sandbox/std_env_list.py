@@ -147,3 +147,14 @@ register(
         state_format='grid3d',
     )
 )
+
+register(
+    id='police-generalize-v0',
+    entry_point='gym_sandbox.envs.police_base:PoliceKillAllEnv',
+    timestep_limit=100,
+
+    kwargs = dict(
+        agent_num=1, agent_team="police", adversary_num=5, map_size=10, adversary_action="dynamic",
+        state_format='grid3d',police_speed=1, thief_speed=1, grid_scale=2, min_catch_dist=0
+    )
+)
