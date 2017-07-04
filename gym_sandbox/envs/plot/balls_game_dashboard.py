@@ -54,15 +54,14 @@ class BallsNotebookRender:
                      y=[_y_min, _y_min, _y_max, _y_max, _y_min],
                      line_color="navy", line_alpha=0.3, line_dash="dotted", line_width=2)
 
-        self.police_num, self.thief_num = team_size[
-                                              'police'], 1000  # team_size['thief'] # TODO: must give a biggest num
+        self.police_num, self.thief_num = team_size['police'], team_size['thief']
         self.total_num = self.police_num + self.thief_num
 
         # draw balls
         self.rd_loc = plt_loc.circle(
             [-1] * self.total_num, [-1] * self.total_num,
-            radius=[POLICE_RADIUS * map_size] * self.police_num + [
-                                                                      THIEF_RADIUS * map_size] * self.thief_num,
+            radius=[POLICE_RADIUS * map_size] * self.police_num +
+                   [THIEF_RADIUS * map_size] * self.thief_num,
             # radius is by percent
             # size=[50]*self.police_num + [20]*self.thief_num,  # size is px
             line_color="gold",
@@ -104,6 +103,8 @@ class BallsNotebookRender:
         all_y = [_loc[1] for _loc in global_ob['police']] + [_loc[1] for _loc in global_ob['thief']]
         self.rd_loc.data_source.data['x'] = all_x
         self.rd_loc.data_source.data['y'] = all_y
+        self.rd_loc.data_source.data['radius'] = [POLICE_RADIUS * self.map_size] * self.police_num + \
+                                                 [THIEF_RADIUS * self.map_size] * self.thief_num
 
         # blink when game end
         thief_color = "red" if current_is_caught else "yellow"
