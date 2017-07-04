@@ -148,13 +148,18 @@ register(
     )
 )
 
+
+"""
+this is a base env for test of generalize(an idea from HRA paper), 
+which means to conquer any similar env(bigger map, more npc, action more random, etc.)
+"""
 register(
     id='police-generalize-v0',
     entry_point='gym_sandbox.envs.police_base:PoliceKillAllEnv',
     timestep_limit=100,
 
     kwargs = dict(
-        agent_num=1, agent_team="police", adversary_num=5, map_size=10, adversary_action="dynamic",
+        agent_num=1, agent_team="police", adversary_num=5, map_size=10, adversary_action="random",
         state_format='grid3d',police_speed=1, thief_speed=1, grid_scale=2, min_catch_dist=0
     )
 )
