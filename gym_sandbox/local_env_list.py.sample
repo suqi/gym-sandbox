@@ -1,4 +1,10 @@
 """
+-------
+Note:
+This is a sample file of local_env_list.py.
+If you want to diy env, first rename this file as local_env_list.py!
+-------
+
 Here you can copy any env from std_env_list, and customize by your own!!
 """
 
