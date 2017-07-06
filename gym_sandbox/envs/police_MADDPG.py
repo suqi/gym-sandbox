@@ -21,7 +21,6 @@ class PoliceMADDPGEnv(PoliceKillOneEnv):
     def __init__(self, **kwargs):
         # assert kwargs["agent_num"] > 1  # come on, this is MA!
         assert kwargs["state_format"] == "cord_list_unfixed"  # lower complexity, only fixed cord
-        self.action_space = gym.spaces.Box(-np.pi, np.pi, [1])
         super().__init__(**kwargs)
 
     def calc_dist(self, pos1, pos2):
