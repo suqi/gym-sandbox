@@ -9,14 +9,8 @@ import matplotlib.pyplot as plt
 import gym_sandbox
 import time
 import multiprocessing
-# GAME = 'police-killone-static-v0'
-# GAME = 'police-killone-dynamic-v0'
-# GAME = 'police-killone-ravel-v0'
-# GAME = 'police-killall-ravel-v0'
-# GAME = 'police-killall-static-cords-500-v0'
-# GAME = 'police-killall-random-3dravel-v0'
-# GAME = 'police-killall-trigger-3dravel-v0'
-GAME = 'police-maddpg-v0'
+
+GAME = 'police-maddpg-single-agent-test-a3c-v0'
 
 OUTPUT_GRAPH = True
 LOG_DIR = './.tf-log'
