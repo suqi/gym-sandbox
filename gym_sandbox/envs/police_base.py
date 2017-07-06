@@ -80,7 +80,13 @@ class PoliceKillAllEnv(gym.Env):
 
         # overwrite spaces setup for openai a3c usage.
         # depends on some self.**** variables, so put it at the end of the code block.
-        self.action_space = gym.spaces.Discrete(len(MOVE_ACTIONS))
+        if action_type == "discret":
+            self.action_space = gym.spaces.Discrete(len(MOVE_ACTIONS))
+        elif action_type == "continous":
+            self.action_space = gym.spaces.Box(-np.pi, np.pi, [1])
+        else:
+            self.action_space = None
+
         if state_format == 'grid3d':
             self.observation_space = gym.spaces.Box(
                 float(0), float(1), self._get_zero_grid().shape)
@@ -90,6 +96,9 @@ class PoliceKillAllEnv(gym.Env):
         elif state_format == 'cord_list_fixed_500':
             self.observation_space = gym.spaces.Box(
                 float(0), float(1), (500*2,))
+        elif state_format == 'cord_list_unfixed':
+            self.observation_space = gym.spaces.Box(
+                float(0), float(1), ((agent_num+adversary_num)*2,))
         else:
             self.observation_space = None
 
@@ -339,7 +348,7 @@ class PoliceKillAllEnv(gym.Env):
         """manhatton dist"""
         _coords1 = np.array(pos1)  # location of me
         _coords2 = np.array(pos2)
-        return sum(abs(_coords1 - _coords2))
+        return np.sum(abs(_coords1 - _coords2))
 
         # # calc Euclidean Distance
         # # alternative way: np.linalg.norm(_coords1 - _coords2)
