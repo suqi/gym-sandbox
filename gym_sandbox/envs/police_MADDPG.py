@@ -21,6 +21,7 @@ class PoliceMADDPGEnv(PoliceKillOneEnv):
     def __init__(self, **kwargs):
         # assert kwargs["agent_num"] > 1  # come on, this is MA!
         assert kwargs["state_format"] == "cord_list_unfixed"  # lower complexity, only fixed cord
+        self.action_space = gym.spaces.Box(-np.pi, np.pi, [1])
         super().__init__(**kwargs)
 
     def calc_dist(self, pos1, pos2):
@@ -33,22 +34,6 @@ class PoliceMADDPGEnv(PoliceKillOneEnv):
         eucl_dist = np.sqrt(np.sum((_coords1 - _coords2) ** 2))
         return eucl_dist
 
-    def police_move(self, police_list, police_actions):
-        # Accept continous move action, which is more suitable for MADDPG
-        police_actions = np.clip(police_actions, 0, np.pi * 2)
-
-        police_new_loc = police_list.copy()
-        police_speed = self.teams['police']['speed']
-        for _i, _a in enumerate(police_actions):
-            action_dir = np.array([np.cos(_a), np.sin(_a)])
-            police_dir = action_dir * police_speed
-            _p = police_list[_i]
-            _p = (_p[0] + police_dir[0], _p[1] + police_dir[1])
-            _p = self.ensure_inside(_p)
-            police_new_loc[_i] = _p
-
-        return police_new_loc
-
     def _trans_state(self, state):
         # now only support cord_list_unfixed, so must be KillOne mode!
         # Firstly absolute cord
@@ -57,5 +42,6 @@ class PoliceMADDPGEnv(PoliceKillOneEnv):
 
         # now relative cord (make self position as (0,0))
         relative_state = [abs_ob.copy() - np.array(_p) for _p in state["police"]]
+        relative_state = [_.ravel() / self.map_size for _ in relative_state]
 
-        return np.array(relative_state) / self.map_size
+        return np.array(relative_state)

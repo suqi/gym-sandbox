@@ -29,11 +29,15 @@ class PoliceKillAllEnv(gym.Env):
     metadata = {'render.modes': ['human', 'rgb_array']}
 
     def __init__(self, agent_num=5, agent_team="police", adversary_num=2, map_size=200,
-                 adversary_action="static", state_format='grid3d', police_speed=2, thief_speed=1, grid_scale=2, min_catch_dist=3):
+                 adversary_action="static", state_format='grid3d',
+                 police_speed=2, thief_speed=1,
+                 grid_scale=2, min_catch_dist=3,
+                 action_type='discret'):
         """the init params should be passed in by code of env registering
         agent_team: police/thief
         state_format: grid3d/grid3d_ravel/cord_list_unfixed/cord_list_fixed_500
         adversary_action: static/simple/random
+        action_type: discret/continous
         Note: for simplicity, the map is a square
         """
         self.teams = {
@@ -54,6 +58,7 @@ class PoliceKillAllEnv(gym.Env):
             self.adversary_team: adversary_num
         }
         self.adversary_action = adversary_action
+        self.action_type = action_type
 
         # police thief location
         _map_center = int(self.map_size / 2)
@@ -193,15 +198,17 @@ class PoliceKillAllEnv(gym.Env):
             thief_new_loc = [self._take_random_action(_thief, team="thief") for _thief in thief_list]
 
         # samely, for me, run to get more close to target
-        # police_new_loc = [self._take_simple_action(_police, thief_list, team="police") for _police in police_list]
-
-        police_new_loc = self.police_move(police_list, police_actions)
+        # police_new_loc = [
+        # self._take_simple_action(_police, thief_list, team="police") for _police in police_list]
+        _move_func = self._police_move_by_discret if self.action_type == 'discret' \
+            else self._police_move_by_continous
+        police_new_loc = _move_func(police_list, police_actions)
 
         new_state['thief'] = thief_new_loc
         new_state['police'] = police_new_loc
         return new_state
 
-    def police_move(self, police_list, police_actions):
+    def _police_move_by_discret(self, police_list, police_actions):
         # Accpet a discret action (up/down/left/right)
         police_new_loc = police_list.copy()
         police_speed = self.teams['police']['speed']
@@ -215,6 +222,22 @@ class PoliceKillAllEnv(gym.Env):
                 _p = (_p[0] + police_dir[0], _p[1] + police_dir[1])
                 _p = self.ensure_inside(_p)
                 police_new_loc[_i] = _p
+
+        return police_new_loc
+
+    def _police_move_by_continous(self, police_list, police_actions):
+        # Accept continous move action, which is more suitable for MADDPG
+        police_actions = np.clip(police_actions, -np.pi, np.pi)
+
+        police_new_loc = police_list.copy()
+        police_speed = self.teams['police']['speed']
+        for _i, _a in enumerate(police_actions):
+            action_dir = np.array([np.cos(_a), np.sin(_a)])
+            police_dir = action_dir * police_speed
+            _p = police_list[_i]
+            _p = (_p[0] + police_dir[0], _p[1] + police_dir[1])
+            _p = self.ensure_inside(_p)
+            police_new_loc[_i] = _p
 
         return police_new_loc
 

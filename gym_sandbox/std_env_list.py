@@ -219,18 +219,17 @@ register(
 )
 
 """
-Problem: MADDPG
-Pros:  
-Cons:
+Problem: MADDPG benchmark (use A3C to solve single to prove this env is correct) 
 """
 register(
-    id='police-maddpg-v0',
+    id='police-maddpg-single-agent-test-a3c-v0',
     entry_point='gym_sandbox.envs.police_MADDPG:PoliceMADDPGEnv',
     timestep_limit=100,
 
     kwargs=dict(
-        agent_num=1, agent_team="police", adversary_num=1, map_size=10, adversary_action="simple",
-        state_format='cord_list_unfixed', police_speed=1, thief_speed=2, min_catch_dist=1
+        agent_num=1, agent_team="police", adversary_num=1, map_size=10, adversary_action="static",
+        state_format='cord_list_unfixed', police_speed=2, thief_speed=1, min_catch_dist=3,
+        action_type='discret'
     )
 )
 
