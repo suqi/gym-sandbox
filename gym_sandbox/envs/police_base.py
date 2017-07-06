@@ -170,10 +170,13 @@ class PoliceKillAllEnv(gym.Env):
     def _close(self):
         pass
 
-    def everybody_move(self, cur_state, police_action):
+    def everybody_move(self, cur_state, police_actions):
         """Run move logic for all, only move, no other action"""
         # the target will run out of me as far as possible
         # either x or y, take care of edge and speed
+        if not isinstance(police_actions, list):
+            police_actions = [police_actions]  # be compatible with MA env.
+
         new_state = cur_state.copy()
 
         thief_list = cur_state['thief']
@@ -192,23 +195,28 @@ class PoliceKillAllEnv(gym.Env):
         # samely, for me, run to get more close to target
         # police_new_loc = [self._take_simple_action(_police, thief_list, team="police") for _police in police_list]
 
-        if police_action < len(MOVE_ACTIONS):
-            # TODO: add stop action
-            action_dir = np.array(MOVE_ACTIONS[police_action])
-
-            police_speed = self.teams['police']['speed']
-            police_dir = action_dir * police_speed
-
-            p1 = police_list[0]
-            p1 = (p1[0] + police_dir[0], p1[1] + police_dir[1])
-            p1 = self.ensure_inside(p1)
-            police_new_loc = [p1]
-        else:
-            police_new_loc = police_list
+        police_new_loc = self.police_move(police_list, police_actions)
 
         new_state['thief'] = thief_new_loc
         new_state['police'] = police_new_loc
         return new_state
+
+    def police_move(self, police_list, police_actions):
+        # Accpet a discret action (up/down/left/right)
+        police_new_loc = police_list.copy()
+        police_speed = self.teams['police']['speed']
+        for _i, _a in enumerate(police_actions):
+            if _a < len(MOVE_ACTIONS):  # move, otherwise keep the same
+                # TODO: add stop action
+                action_dir = np.array(MOVE_ACTIONS[_a])
+                police_dir = action_dir * police_speed
+
+                _p = police_list[_i]
+                _p = (_p[0] + police_dir[0], _p[1] + police_dir[1])
+                _p = self.ensure_inside(_p)
+                police_new_loc[_i] = _p
+
+        return police_new_loc
 
     def _step(self, action):
         """firstly move, then check distance"""
