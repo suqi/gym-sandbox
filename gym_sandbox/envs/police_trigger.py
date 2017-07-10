@@ -23,12 +23,13 @@ class PoliceTriggerEnv(PoliceKillAllEnv):
         firstly check police pull trigger, then move
         """
         new_state = self.current_state.copy()
+        kill_num = 0
+
         if action == 4:  # pull trigger
-            new_state = self.check_thief_caught(new_state)
+            new_state, kill_num = self.check_thief_caught(new_state)
 
         new_state = self.everybody_move(new_state, action)
 
-        kill_num = len(self.current_state["thief"]) - len(new_state["thief"])
         self.current_is_caught = kill_num > 0
 
         self.last_state = self.current_state

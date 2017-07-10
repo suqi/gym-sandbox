@@ -253,8 +253,7 @@ class PoliceKillAllEnv(gym.Env):
     def _step(self, action):
         """firstly move, then check distance"""
         new_state = self.everybody_move(self.current_state, action)
-        new_state = self.check_thief_caught(new_state)
-        kill_num = len(self.current_state["thief"]) - len(new_state["thief"])
+        new_state, kill_num = self.check_thief_caught(new_state)
         self.current_is_caught = kill_num > 0
 
         self.last_state = self.current_state
@@ -278,7 +277,7 @@ class PoliceKillAllEnv(gym.Env):
 
     def check_thief_caught(self, cur_state):
         """override attention: must return thief caught num of this step
-        Attention: state will be change here!
+        return (new_state, kill_num)
         """
         new_state = cur_state.copy()
 
@@ -294,7 +293,9 @@ class PoliceKillAllEnv(gym.Env):
 
         new_state['thief'] = survived_thief_list
 
-        return new_state
+        kill_num = len(cur_state["thief"]) - len(new_state["thief"])
+
+        return new_state, kill_num
 
     def _get_avail_new_loc(self, my_pos, my_speed):
         x, y = my_pos
