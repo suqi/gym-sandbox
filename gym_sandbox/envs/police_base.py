@@ -188,7 +188,7 @@ class PoliceKillAllEnv(gym.Env):
         """Run move logic for all, only move, no other action"""
         # the target will run out of me as far as possible
         # either x or y, take care of edge and speed
-        if not isinstance(police_actions, list):
+        if not isinstance(police_actions, (np.ndarray, list)):
             police_actions = [police_actions]  # be compatible with MA env.
 
         new_state = cur_state.copy()
