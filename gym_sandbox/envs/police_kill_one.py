@@ -17,4 +17,18 @@ class PoliceKillOneEnv(PoliceKillAllEnv):
     def _cal_done(self, state, kill_num):
         # police win when any thief is caught
         _pass_step_limit = self.elapsed_steps >= self.spec.max_episode_steps
-        return (kill_num or _pass_step_limit)
+        return bool(kill_num or _pass_step_limit)
+
+    def check_thief_caught(self, cur_state):
+        # don't change state here! keep killed thief in state so that state shape is fixed
+        thief_list = cur_state['thief']
+        police_list = cur_state['police']
+
+        kill_num = 0
+        for _thief in thief_list:
+            for _police in police_list:
+                if self.calc_dist(_thief, _police) <= self.min_catch_dist:
+                    kill_num = 1
+                    break
+
+        return cur_state, kill_num
