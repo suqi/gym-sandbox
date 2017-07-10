@@ -10,27 +10,31 @@ tensorflow 1.0
 gym 0.8.0
 """
 
+import time
 import tensorflow as tf
 import numpy as np
 import gym
+import gym_sandbox
 
 np.random.seed(1)
 tf.set_random_seed(1)
 
 #####################  hyper parameters  ####################
 
-MAX_EPISODES = 70
-MAX_EP_STEPS = 400
+MAX_EPISODES = 7000
+MAX_EP_STEPS = 100
 LR_A = 0.01  # learning rate for actor
 LR_C = 0.01  # learning rate for critic
 GAMMA = 0.9  # reward discount
 REPLACE_ITER_A = 500
 REPLACE_ITER_C = 300
-MEMORY_CAPACITY = 7000
+MEMORY_CAPACITY = 2000  # memory bigger, performance better, must be a big memory!
 BATCH_SIZE = 32
+var = 3  # control exploration, this is for make some noise, but must be small when already converge
+var_decay = .9995  # decay the action randomness
 
-RENDER = False
-ENV_NAME = 'Pendulum-v0'
+RENDER = True
+ENV_NAME = 'police-killone-continous-v0'
 
 ###############################  Actor  ####################################
 
@@ -101,21 +105,25 @@ class DDPG(object):
 
     def _build_a(self, s, scope, trainable):
         with tf.variable_scope(scope):
-            net = tf.layers.dense(s, 30, activation=tf.nn.relu, name='l1', trainable=trainable)
+            net = tf.layers.dense(s, 200, activation=tf.nn.relu, name='l1', trainable=trainable)
             a = tf.layers.dense(net, self.a_dim, activation=tf.nn.tanh, name='a', trainable=trainable)
             return tf.multiply(a, self.a_bound, name='scaled_a')
 
     def _build_c(self, s, a, scope, trainable):
         with tf.variable_scope(scope):
-            n_l1 = 30
+            n_l1 = 100
             w1_s = tf.get_variable('w1_s', [self.s_dim, n_l1], trainable=trainable)
             w1_a = tf.get_variable('w1_a', [self.a_dim, n_l1], trainable=trainable)
             b1 = tf.get_variable('b1', [1, n_l1], trainable=trainable)
             net = tf.nn.relu(tf.matmul(s, w1_s) + tf.matmul(a, w1_a) + b1)
             return tf.layers.dense(net, 1, trainable=trainable)  # Q(s,a)
 
+
+# ----------- main entry ----------------
+
 env = gym.make(ENV_NAME)
-env = env.unwrapped
+env.env.init_params(show_dashboard=True, bokeh_output='standalone')
+# env = env.unwrapped
 env.seed(1)
 
 s_dim = env.observation_space.shape[0]
@@ -124,28 +132,33 @@ a_bound = env.action_space.high
 
 ddpg = DDPG(a_dim, s_dim, a_bound)
 
-var = 3  # control exploration
+
 for i in range(MAX_EPISODES):
     s = env.reset()
     ep_reward = 0
     for j in range(MAX_EP_STEPS):
-        if RENDER:
-            env.render()
-
         # Add exploration noise
         a = ddpg.choose_action(s)
-        a = np.clip(np.random.normal(a, var), -2, 2)    # add randomness to action selection for exploration
+
+        # this is a noise-like implementation
+        a = np.clip(np.random.normal(a, var), -a_bound, a_bound)    # add randomness to action selection for exploration
+
         s_, r, done, info = env.step(a)
+        if RENDER:
+            env.render()
+            time.sleep(0.05)
 
         ddpg.store_transition(s, a, r / 10, s_)
 
         if ddpg.pointer > MEMORY_CAPACITY:
-            var *= .9995    # decay the action randomness
+            var *= var_decay
             ddpg.learn()
 
         s = s_
         ep_reward += r
-        if j == MAX_EP_STEPS-1:
+
+        if done:
+            time.sleep(0.1)
             print('Episode:', i, ' Reward: %i' % int(ep_reward), 'Explore: %.2f' % var, )
-            if ep_reward > -1000:RENDER = True
+            # if ep_reward > -1000:RENDER = True
             break
