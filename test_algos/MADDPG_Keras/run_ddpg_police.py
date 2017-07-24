@@ -1,12 +1,13 @@
+import time
 import gym
 import gym_sandbox
 import numpy as np
 import random
 import argparse
-from keras.models import model_from_json, Model
-from keras.models import Sequential
-from keras.layers.core import Dense, Dropout, Activation, Flatten
-from keras.optimizers import Adam
+# from keras.models import model_from_json, Model
+# from keras.models import Sequential
+# from keras.layers.core import Dense, Dropout, Activation, Flatten
+# from keras.optimizers import Adam
 import tensorflow as tf
 import json
 
@@ -17,7 +18,8 @@ from OU import OU
 import timeit
 
 OU = OU()       #Ornstein-Uhlenbeck Process
-GAME = 'police-maddpg-continous-v0'
+# GAME = 'police-maddpg-continous-v0'
+GAME = 'police-killone-continous-v0'
 
 def playGame(train_indicator=0):    #1 means Train, 0 means simply Run
     BUFFER_SIZE = 100000
@@ -81,7 +83,7 @@ def playGame(train_indicator=0):    #1 means Train, 0 means simply Run
         ob = env.reset()
 
         s_t = ob
-     
+
         total_reward = 0.
         for j in range(max_steps):
             loss = 0
@@ -105,9 +107,10 @@ def playGame(train_indicator=0):    #1 means Train, 0 means simply Run
             ob, r_t, done, info = env.step(a_t[0])
 
             env.render()
+            time.sleep(0.1)
 
             s_t1 = ob
-        
+
             buff.add(s_t, a_t[0], r_t, s_t1, done)      #Add replay buffer
             
             #Do the batch update
