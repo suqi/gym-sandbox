@@ -15,7 +15,6 @@ tf.set_random_seed(1)
 #####################  hyper parameters  ####################
 
 MAX_EPISODES = 7000
-MAX_EP_STEPS = 100
 LR_A = 0.01  # learning rate for actor
 LR_C = 0.01  # learning rate for critic
 GAMMA = 0.9  # reward discount
@@ -24,11 +23,13 @@ REPLACE_ITER_C = 300
 MEMORY_CAPACITY = 2000  # memory bigger, performance better, must be a big memory!
 BATCH_SIZE = 32
 
-var = 3  # control exploration, this is for make some noise, but must be small when already converge
-var_decay = .99995  # decay the action randomness
-
+PLAY_MODE = False #True
 RENDER = True
 RENDER_FPS = 10
+
+var = 0 if PLAY_MODE else 3   # control exploration, this is for make some noise, but must be small when already converge
+var_decay = .99995  # decay the action randomness
+
 
 ENV_NAME = 'police-commnet-continous-2agent-v0'
 AGENT_NUM = 2
@@ -135,7 +136,7 @@ a_bound = env.action_space.high
 
 ddpg = DDPG(a_dim, s_dim, a_bound)
 saver = tf.train.Saver()
-# saver.restore(ddpg.sess, '.tf-models/commnet-ddpg-1000')
+saver.restore(ddpg.sess, '.tf-models/commnet-ddpg-10x10-best')
 
 for i in range(MAX_EPISODES):
     s = env.reset()
@@ -144,7 +145,7 @@ for i in range(MAX_EPISODES):
     if i > 1 and i % 1000 == 0:
         saver.save(ddpg.sess, ".tf-models/commnet-ddpg", global_step=i)
 
-    for j in range(MAX_EP_STEPS):
+    while True:
         # Add exploration noise
         a = ddpg.choose_action(s)
 

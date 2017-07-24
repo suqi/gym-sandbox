@@ -13,7 +13,7 @@ GAME = 'police-commnet-discret-2agent-v0'
 
 OUTPUT_GRAPH = True
 LOG_DIR = './.tf-log'
-N_WORKERS = multiprocessing.cpu_count()
+N_WORKERS = 4 #multiprocessing.cpu_count()
 MAX_GLOBAL_EP = 30000
 GLOBAL_NET_SCOPE = 'Global_Net'
 UPDATE_GLOBAL_ITER = 20
@@ -30,6 +30,7 @@ env = gym.make(GAME)
 _s = env.reset()
 N_S = _s.shape[0]  # env.observation_space.shape[0]
 N_A = env.action_space.n
+AGENT_NUM = 2
 
 
 class ACNet(object):
@@ -44,7 +45,7 @@ class ACNet(object):
         else:  # local net, calculate losses
             with tf.variable_scope(scope):
                 self.s = tf.placeholder(tf.float32, [None, N_S], 'S')
-                self.a_his = tf.placeholder(tf.int32, [None, ], 'A')
+                self.a_his = tf.placeholder(tf.int32, [None, AGENT_NUM], 'A')
                 self.v_target = tf.placeholder(tf.float32, [None, 1], 'Vtarget')
 
                 self.a_prob, self.v = self._build_net()
@@ -81,7 +82,7 @@ class ACNet(object):
         w_init = tf.random_normal_initializer(0., .1)
         with tf.variable_scope('actor'):
             l_a = tf.layers.dense(self.s, 200, tf.nn.relu6, kernel_initializer=w_init, name='la')
-            a_prob = tf.layers.dense(l_a, N_A, tf.nn.softmax, kernel_initializer=w_init, name='ap')
+            a_prob = tf.layers.dense(l_a, [N_A, AGENT_NUM], tf.nn.softmax, kernel_initializer=w_init, name='ap')
         with tf.variable_scope('critic'):
             l_c = tf.layers.dense(self.s, 100, tf.nn.relu6, kernel_initializer=w_init, name='lc')
             v = tf.layers.dense(l_c, 1, kernel_initializer=w_init, name='v')  # state value
@@ -104,7 +105,7 @@ class ACNet(object):
 class Worker(object):
     def __init__(self, name, globalAC):
         self.env = gym.make(GAME)
-        self.env.env.init_params(show_dashboard=name == 'W_0')
+        self.env.env.init_params(show_dashboard=name == 'W_0', bokeh_output="standalone")
         self.name = name
         self.AC = ACNet(name, globalAC)
 
@@ -125,15 +126,13 @@ class Worker(object):
                 s_, r, done, info = self.env.step(a)
 
                 if self.name == 'W_0':
-                    show_interval = GLOBAL_EP % 1000 == 0
-                    # nice = GLOBAL_RUNNING_R and GLOBAL_RUNNING_R[-1] >= -10
-                    if show_interval:
+                    if True:
                         self.env.render()
 
                         time.sleep(0.2)
 
                         if done:
-                            time.sleep(0.8)  # 回合结束给点时间看看效果
+                            time.sleep(0.3)  # 回合结束给点时间看看效果
 
                 # print('>>>>', 's:', s, ' s_:', s_,  'action:', a, '    -- reward:', r, ' -- done:', done, )
 
