@@ -1,6 +1,7 @@
 """
 MADDPG solution to solve MA
-Based on Morvan's updated version of DDPG: https://github.com/MorvanZhou/Reinforcement-learning-with-tensorflow/blob/master/contents/9_Deep_Deterministic_Policy_Gradient_DDPG/DDPG_update.py
+Based on Morvan's DDPG v1 (A/C is seperate so that MADDPG is easier to implement):
+https://github.com/MorvanZhou/Reinforcement-learning-with-tensorflow/blob/master/contents/9_Deep_Deterministic_Policy_Gradient_DDPG/DDPG.py
 """
 
 import time
