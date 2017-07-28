@@ -33,7 +33,7 @@ BATCH_SIZE = 32
 var = 3  # control exploration, this is for make some noise, but must be small when already converge
 var_decay = .9995  # decay the action randomness
 
-RENDER = True
+RENDER = False
 ENV_NAME = 'police-killone-continous-v0'
 
 ###############################  Actor  ####################################
