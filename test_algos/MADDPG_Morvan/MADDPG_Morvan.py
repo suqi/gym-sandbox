@@ -2,6 +2,10 @@
 MADDPG solution to solve MA
 Based on Morvan's DDPG v1 (A/C is seperate so that MADDPG is easier to implement):
 https://github.com/MorvanZhou/Reinforcement-learning-with-tensorflow/blob/master/contents/9_Deep_Deterministic_Policy_Gradient_DDPG/DDPG.py
+Actually v1 has a bug where Morvan-DDPG-v2 has solve:
+    This alog will firstly update critic q network and then update actor,
+    the bug is that after critic update q, the q is changed,
+    then actor calculate dq/da * da/dw, the dq/da is a updated q, not the original q
 """
 
 import time
@@ -219,8 +223,7 @@ class Memory(object):
 
 
 env = gym.make(ENV_NAME)
-if RENDER:
-    env.env.init_params(show_dashboard=True, bokeh_output='standalone')
+env.env.init_params(show_dashboard=True, bokeh_output='standalone')
 
 state_dim = env.observation_space.shape[0]
 action_dim = env.action_space.shape[0]
@@ -269,6 +272,9 @@ writer = tf.summary.FileWriter("logs/", sess.graph)
 var = 3 #action_bound
 
 for i in range(MAX_EPISODES):
+    if i > 500:
+        RENDER = True
+
     x_ma = env.reset()
     ep_reward = 0
 
