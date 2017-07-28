@@ -40,7 +40,15 @@ class PoliceMADDPGEnv(PoliceKillOneEnv):
         abs_ob = np.array(abs_ob)
 
         # now relative cord (make self position as (0,0))
+        # abs_state = [abs_ob.copy() for _ in range(self.agent_num)]
         relative_state = [abs_ob.copy() - np.array(_p) for _p in state["police"]]
         relative_state = [_.ravel() / self.map_size for _ in relative_state]
 
         return np.array(relative_state)
+
+    # here MADDPG defaultly require a list of reward,
+    # so that it allows an different reward for different agent
+    # but for simplicity here we return a single same reward for all agent
+    def _cal_reward(self, kill_num, is_done):
+        reward = super()._cal_reward(kill_num, is_done)
+        return np.array([[reward] for _ in range(self.agent_num)])

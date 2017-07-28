@@ -234,7 +234,8 @@ register(
 )
 
 """
-Problem: official MADDPG  
+Problem: official MADDPG
+Tips:    As MA is complicated, you'd better use agent_num=1 to prove your algo works first.  
 """
 register(
     id='police-maddpg-continous-v0',
@@ -242,8 +243,8 @@ register(
     timestep_limit=100,
 
     kwargs=dict(
-        agent_num=1, agent_team="police", adversary_num=1, map_size=10, adversary_action="simple",
-        state_format='cord_list_unfixed', police_speed=1, thief_speed=1, min_catch_dist=3,
+        agent_num=1, agent_team="police", adversary_num=1, map_size=10, adversary_action="static",
+        state_format='cord_list_unfixed', police_speed=2, thief_speed=1, min_catch_dist=3,
         action_type='continous'
     )
 )

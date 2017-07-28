@@ -241,6 +241,7 @@ class PoliceKillAllEnv(gym.Env):
         police_new_loc = police_list.copy()
         police_speed = self.teams['police']['speed']
         for _i, _a in enumerate(police_actions):
+            _a = np.asscalar(_a)  # transform array to scalar
             action_dir = np.array([np.cos(_a), np.sin(_a)])
             police_dir = action_dir * police_speed
             _p = police_list[_i]
