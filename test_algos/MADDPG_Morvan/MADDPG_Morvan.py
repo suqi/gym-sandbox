@@ -52,17 +52,17 @@ class Actor(object):
 
         with tf.variable_scope('Actor{}'.format(agent_id)):
             # input s, output a
-            self.a = self._build_net(S, scope='eval_net', trainable=True)
+            self.a = self._build_actor_net(S, scope='eval_net', trainable=True)
 
             # input s_, output a, get a_ for critic
-            self.a_ = self._build_net(S2, scope='target_net', trainable=False)
+            self.a_ = self._build_actor_net(S2, scope='target_net', trainable=False)
 
         self.e_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES,
                                           scope='Actor{}/eval_net'.format(agent_id))
         self.t_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES,
                                           scope='Actor{}/target_net'.format(agent_id))
 
-    def _build_net(self, s, scope, trainable):
+    def _build_actor_net(self, s, scope, trainable):
         with tf.variable_scope(scope):
             init_w = tf.random_normal_initializer(0., 0.3)
             init_b = tf.constant_initializer(0.1)
@@ -80,7 +80,7 @@ class Actor(object):
                 scaled_a = tf.multiply(actions, self.action_bound, name='scaled_a')
         return scaled_a
 
-    def learn(self, s, x_ma, epoch):   # batch update
+    def learn_actor(self, s, x_ma, epoch):   # batch update
         _, police_grads = self.sess.run(self.train_ops, feed_dict={S: s, X_MA: x_ma})
         # the following method for soft replace target params is computational expansive
         # target_params = (1-tau) * target_params + tau * eval_params
@@ -138,11 +138,11 @@ class Critic(object):
             # Input (s, a), output q
             local_a = a_ma[agent_id]
             self.a_ma = tf.concat(a_ma, axis=1)
-            self.q = self._build_net(X_MA, self.a_ma, 'eval_net', trainable=True)
+            self.q = self._build_critic_net(X_MA, self.a_ma, 'eval_net', trainable=True)
 
             # Input (s_, a_), output q_ for q_target
             a2_ma = tf.concat(a2_ma, axis=1)
-            self.q_ = self._build_net(X2_MA, a2_ma, 'target_net', trainable=False)    # target_q is based on a_ from Actor's target_net
+            self.q_ = self._build_critic_net(X2_MA, a2_ma, 'target_net', trainable=False)    # target_q is based on a_ from Actor's target_net
 
             self.e_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Critic{}/eval_net'.format(agent_id))
             self.t_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Critic{}/target_net'.format(agent_id))
@@ -164,7 +164,7 @@ class Critic(object):
             self.a_grads = tf.gradients(self.q, local_a)[0]  # only get dq/da, throw dq/dw
             self.train_ops.append(self.a_grads)
 
-    def _build_net(self, x_ma, a_ma, scope, trainable):
+    def _build_critic_net(self, x_ma, a_ma, scope, trainable):
         with tf.variable_scope(scope):
             init_w = tf.random_normal_initializer(0., 0.1)
             init_b = tf.constant_initializer(0.1)
@@ -183,7 +183,7 @@ class Critic(object):
                 q = tf.layers.dense(l1, 1, kernel_initializer=init_w, bias_initializer=init_b, trainable=trainable)   # Q(s,a)
         return q
 
-    def learn(self, x_ma, a_ma, r, x2_ma, s, a, s2, epoch=0):
+    def learn_critic(self, x_ma, a_ma, r, x2_ma, s, a, s2, epoch=0):
         # ATTENTION!!!!
         # the key point is that we use constant a_ma to replace critic's tensor: self.a_ma
         # here we must replace this tensor, otherwise whole network crash
@@ -319,8 +319,8 @@ for i in range(MAX_EPISODES):
 
                 # TODO: maybe actor should learn befor critic
                 # so that actor's Q gradient is from old critic, which should be same as Paper.
-                multi_critics[_i].learn(bx_ma, ba_ma, b_r, bx2_ma, b_s, b_a, b_s2, learn_epoch)
-                multi_actors[_i].learn(b_s, bx_ma, learn_epoch)
+                multi_critics[_i].learn_critic(bx_ma, ba_ma, b_r, bx2_ma, b_s, b_a, b_s2, learn_epoch)
+                multi_actors[_i].learn_actor(b_s, bx_ma, learn_epoch)
 
         x_ma = x2_ma
         ep_reward += np.sum(r_ma)
