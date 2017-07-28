@@ -17,24 +17,26 @@ import gym_sandbox
 np.random.seed(1)
 tf.set_random_seed(1)
 
-#####################  hyper parameters  ####################
-
+# -------------------  hyper parameters  -------------------
 MAX_EPISODES = 1000000
 LR_A = 0.01  # learning rate for actor
 LR_C = 0.01  # learning rate for critic
 GAMMA = 0.9  # reward discount
 # TAU = 0.01  # Soft update for target param, but this is computationally expansive
 # so we use replace_iter instead
-REPLACE_ITER_A = 500
+REPLACE_ITER_A = 500  # how many iter to update target
 REPLACE_ITER_C = 300
 MEMORY_CAPACITY = 2000
 BATCH_SIZE = 32
-LEARN_HZ = 1
+LEARN_HZ = 1  # how frequent to learn
 
-RENDER = False # True
+RENDER = False
 ENV_NAME = 'police-maddpg-continous-v0'
 
-###############################  Actor  ####################################
+
+# -------------------  Actor  -------------------
+
+
 class Actor(object):
     def __init__(self, sess, action_dim, action_bound, learning_rate, t_replace_iter,
                  agent_id, agent_num):
@@ -56,9 +58,9 @@ class Actor(object):
             self.a_ = self._build_net(S2, scope='target_net', trainable=False)
 
         self.e_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES,
-                                      scope='Actor{}/eval_net'.format(agent_id))
+                                          scope='Actor{}/eval_net'.format(agent_id))
         self.t_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES,
-                                              scope='Actor{}/target_net'.format(agent_id))
+                                          scope='Actor{}/target_net'.format(agent_id))
 
     def _build_net(self, s, scope, trainable):
         with tf.variable_scope(scope):
@@ -71,9 +73,11 @@ class Actor(object):
             #                      kernel_initializer=init_w, bias_initializer=init_b, name='l2',
             #                      trainable=trainable)
             with tf.variable_scope('a'):
-                actions = tf.layers.dense(l1, self.a_dim, activation=tf.nn.tanh, kernel_initializer=init_w,
+                actions = tf.layers.dense(l1, self.a_dim, activation=tf.nn.tanh,
+                                          kernel_initializer=init_w,
                                           bias_initializer=init_b, name='a', trainable=trainable)
-                scaled_a = tf.multiply(actions, self.action_bound, name='scaled_a')  # Scale output to -action_bound to action_bound
+                # Scale [-1,1] to [-action_bound ~ action_bound]
+                scaled_a = tf.multiply(actions, self.action_bound, name='scaled_a')
         return scaled_a
 
     def learn(self, s, x_ma, epoch):   # batch update
@@ -87,7 +91,6 @@ class Actor(object):
         summary.value.add(tag='info/police_grads{}'.format(self.agent_id), simple_value=np.mean([np.mean(_) for _ in police_grads]))
         writer.add_summary(summary, epoch)
         writer.flush()
-
 
         # instead of above method, I use a hard replacement here
         if self.t_replace_counter % self.t_replace_iter == 0:
@@ -103,17 +106,19 @@ class Actor(object):
             # ys = policy;
             # xs = policy's parameters;
             # self.a_grads = the gradients of the policy to get more Q
-            # tf.gradients will calculate dys/dxs with a initial gradients for ys, so this is dq/da * da/dparams
+            # tf.gradients will calculate dys/dxs with a initial gradients for ys,
+            # so this is dq/da * da/dparams
             self.policy_grads = tf.gradients(ys=self.a, xs=self.e_params, grad_ys=a_grads)
 
         with tf.variable_scope('A_train'):
+            # use minus lr to maximize Q
             opt = tf.train.AdamOptimizer(-self.lr)  # (- learning rate) for ascent policy
             self.train_ops = []
             self.train_ops.append(opt.apply_gradients(zip(self.policy_grads, self.e_params)))
             self.train_ops.append(self.policy_grads)
 
 
-###############################  Critic  ####################################
+# -------------------  Critic  -------------------
 
 class Critic(object):
     def __init__(self, sess, state_dim, action_dim, learning_rate, gamma, t_replace_iter,
@@ -146,15 +151,17 @@ class Critic(object):
             self.target_q = R + self.gamma * self.q_
 
         with tf.variable_scope('TD_error{}'.format(self.agent_id)):
-            self.loss = tf.reduce_mean(tf.squared_difference(self.target_q, self.q))
+            self.loss = tf.reduce_mean(tf.squared_difference(self.target_q, self.q))  # MSE
 
         with tf.variable_scope('C_train{}'.format(self.agent_id)):
             self.train_ops = []
-            self.train_ops.append(tf.train.AdamOptimizer(self.lr).minimize(self.loss, var_list=self.e_params))
-            self.train_ops.append(self.loss)
+            self.train_ops.append(tf.train.AdamOptimizer(self.lr).minimize(
+                self.loss, var_list=self.e_params))  # C train only update c network, don't update a
+            self.train_ops.append(self.loss)  # for tf.summary
 
         with tf.variable_scope('a_grad{}'.format(self.agent_id)):
-            self.a_grads = tf.gradients(self.q, local_a)[0]   # tensor of gradients of each sample (None, a_dim)
+            # tensor of gradients of each sample (None, a_dim)
+            self.a_grads = tf.gradients(self.q, local_a)[0]  # only get dq/da, throw dq/dw
             self.train_ops.append(self.a_grads)
 
     def _build_net(self, x_ma, a_ma, scope, trainable):
@@ -177,14 +184,20 @@ class Critic(object):
         return q
 
     def learn(self, x_ma, a_ma, r, x2_ma, s, a, s2, epoch=0):
+        # ATTENTION!!!!
+        # the key point is that we use constant a_ma to replace critic's tensor: self.a_ma
+        # here we must replace this tensor, otherwise whole network crash
+        # because critic must use constant a_ma to do gradient,
+        # while actor must use its network tensor a_ma to do gradient
+        # this is the trick!!
         _c_grad, _c_loss, _a_grads = self.sess.run(
-            # 注意!!!! 这个地方最关键的, 是feed_dict里用self.a_ma, 而不是A_MA, 就是这一个小东西导致我之前的神经网络整个是崩溃的!!!!!
             self.train_ops, feed_dict={X_MA: x_ma, self.a_ma: a_ma,
-                                                R: r, X2_MA: x2_ma,
-                                                S: s, S2: s2})
+                                       R: r, X2_MA: x2_ma,
+                                       S: s, S2: s2})
 
         summary = tf.Summary()
-        # summary.value.add(tag='info/c_gradient{}'.format(self.agent_id), simple_value=float(_c_grad))
+        # summary.value.add(tag='info/c_gradient{}'.format(self.agent_id),
+        #                   simple_value=float(_c_grad))
         summary.value.add(tag='info/c_loss{}'.format(self.agent_id), simple_value=float(_c_loss))
         writer.add_summary(summary, epoch)
         writer.flush()
@@ -201,7 +214,7 @@ class Critic(object):
         self.t_replace_counter += 1
 
 
-#####################  Memory  ####################
+# -------------------  Memory -------------------
 
 class Memory(object):
     def __init__(self, capacity, dims):
@@ -222,6 +235,8 @@ class Memory(object):
         return self.data[indices, :]
 
 
+# -------------------  Env runner main entry -------------------
+
 env = gym.make(ENV_NAME)
 env.env.init_params(show_dashboard=True, bokeh_output='standalone')
 
@@ -231,28 +246,22 @@ action_bound = env.action_space.high
 AGENT_NUM = env.env.agent_num
 
 # all placeholder for tf
-# with tf.name_scope('S'):
-#     S = tf.placeholder(tf.float32, shape=[None, state_dim], name='s')
-# with tf.name_scope('R'):
-#     R = tf.placeholder(tf.float32, [None, 1], name='r')
-# with tf.name_scope('S_'):
-#     S_ = tf.placeholder(tf.float32, shape=[None, state_dim], name='s_')
-S = tf.placeholder(tf.float32, [None, state_dim], 's')
-S2 = tf.placeholder(tf.float32, [None, state_dim], 's2')
-X_MA = tf.placeholder(tf.float32, [None, state_dim * AGENT_NUM], 'x_ma')
-X2_MA = tf.placeholder(tf.float32, [None, state_dim * AGENT_NUM], 'x2_ma')
-A_MA = tf.placeholder(tf.float32, [None, 1 * AGENT_NUM], 'a_ma')
-A2_MA = tf.placeholder(tf.float32, [None, 1 * AGENT_NUM], 'a2_ma')
-R = tf.placeholder(tf.float32, [None, 1], 'r')
+with tf.name_scope('transition'):
+    S = tf.placeholder(tf.float32, [None, state_dim], 's')
+    S2 = tf.placeholder(tf.float32, [None, state_dim], 's2')
+    X_MA = tf.placeholder(tf.float32, [None, state_dim * AGENT_NUM], 'x_ma')
+    X2_MA = tf.placeholder(tf.float32, [None, state_dim * AGENT_NUM], 'x2_ma')
+    A_MA = tf.placeholder(tf.float32, [None, 1 * AGENT_NUM], 'a_ma')
+    A2_MA = tf.placeholder(tf.float32, [None, 1 * AGENT_NUM], 'a2_ma')
+    R = tf.placeholder(tf.float32, [None, 1], 'r')
 
 sess = tf.Session()
 
 # Create actor and critic.
 # They are actually connected to each other, details can be seen in tensorboard or in this picture:
-# actor = Actor(sess, action_dim, action_bound, LR_A, REPLACE_ITER_A)
-multi_actors = [Actor(sess, action_dim, action_bound, LR_A, REPLACE_ITER_A, _, AGENT_NUM)
+multi_actors = [Actor(sess, action_dim, action_bound, LR_A, REPLACE_ITER_A,
+                      _, AGENT_NUM)
                 for _ in range(AGENT_NUM)]
-# critic = Critic(sess, state_dim, action_dim, LR_C, GAMMA, REPLACE_ITER_C, actor.a, actor.a_)
 multi_critics = [Critic(sess, state_dim, action_dim, LR_C, GAMMA, REPLACE_ITER_C,
                         [actor.a for actor in multi_actors],
                         [actor.a_ for actor in multi_actors],
@@ -268,8 +277,7 @@ M = Memory(MEMORY_CAPACITY, dims=(state_dim * 2 + action_dim + 1) * AGENT_NUM)
 
 writer = tf.summary.FileWriter("logs/", sess.graph)
 
-# var = 3  # control exploration
-var = 3 #action_bound
+var = 3  # control exploration, w.r.t action_bound
 
 for i in range(MAX_EPISODES):
     if i > 500:
@@ -308,6 +316,9 @@ for i in range(MAX_EPISODES):
                 b_s2 = np.split(bx2_ma, AGENT_NUM, axis=1)[_i]
 
                 learn_epoch = M.pointer-MEMORY_CAPACITY
+
+                # TODO: maybe actor should learn befor critic
+                # so that actor's Q gradient is from old critic, which should be same as Paper.
                 multi_critics[_i].learn(bx_ma, ba_ma, b_r, bx2_ma, b_s, b_a, b_s2, learn_epoch)
                 multi_actors[_i].learn(b_s, bx_ma, learn_epoch)
 
