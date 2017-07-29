@@ -66,7 +66,8 @@ class Actor(object):
         with tf.variable_scope(scope):
             init_w = tf.random_normal_initializer(0., 0.3)
             init_b = tf.constant_initializer(0.1)
-            l1 = tf.layers.dense(s, 30, activation=tf.nn.relu,
+            n_l1 = 256  # 30
+            l1 = tf.layers.dense(s, n_l1, activation=tf.nn.relu,
                                  kernel_initializer=init_w, bias_initializer=init_b, name='l1',
                                  trainable=trainable)
             # l2 = tf.layers.dense(l1, 256, activation=tf.nn.relu,
@@ -170,7 +171,7 @@ class Critic(object):
             init_b = tf.constant_initializer(0.1)
 
             with tf.variable_scope('l1'):
-                n_l1 = 30
+                n_l1 = 256  # 30
                 w1_x = tf.get_variable('w1_x', [self.s_dim * self.agent_num, n_l1], initializer=init_w, trainable=trainable)
                 w1_a = tf.get_variable('w1_a', [self.a_dim * self.agent_num, n_l1], initializer=init_w, trainable=trainable)
                 b1 = tf.get_variable('b1', [1, n_l1], initializer=init_b, trainable=trainable)
@@ -277,10 +278,10 @@ M = Memory(MEMORY_CAPACITY, dims=(state_dim * 2 + action_dim + 1) * AGENT_NUM)
 
 writer = tf.summary.FileWriter("logs/", sess.graph)
 
-var = 3  # control exploration, w.r.t action_bound
+var = 3 #action_bound  # control exploration, w.r.t action_bound
 
 for i in range(MAX_EPISODES):
-    if i > 500:
+    if i > 200:
         RENDER = True
 
     x_ma = env.reset()
@@ -299,7 +300,7 @@ for i in range(MAX_EPISODES):
         M.store_transition(x_ma, a_ma, r_ma/10, x2_ma)
 
         if M.pointer > MEMORY_CAPACITY and M.pointer % LEARN_HZ == 0:
-            var *= .9995    # decay the action randomness
+            var *= .99995    # decay the action randomness
             b_M = M.sample(BATCH_SIZE)
 
             _x_len = state_dim * AGENT_NUM
