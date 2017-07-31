@@ -283,7 +283,7 @@ writer = tf.summary.FileWriter("logs/", sess.graph)
 var = np.pi #action_bound  # control exploration, w.r.t action_bound
 
 for i in range(MAX_EPISODES):
-    if i > 300:
+    if i > 1000:
         RENDER = True
 
     x_ma = env.reset()
@@ -300,10 +300,10 @@ for i in range(MAX_EPISODES):
             env.render()
             time.sleep(0.1)
 
-        M.store_transition(x_ma, a_ma, r_ma/10, x2_ma)
+        M.store_transition(x_ma, a_ma, r_ma, x2_ma)
 
         if M.pointer > MEMORY_CAPACITY and M.pointer % LEARN_HZ == 0:
-            var *= .99995    # decay the action randomness
+            var *= .9995    # decay the action randomness
             b_M = M.sample(BATCH_SIZE)
 
             _x_len = state_dim * AGENT_NUM
