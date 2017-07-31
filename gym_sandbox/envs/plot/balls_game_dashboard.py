@@ -68,6 +68,10 @@ class BallsNotebookRender:
             line_width=[10] * self.police_num + [1] * self.thief_num,
             fill_color=["green"] * self.police_num + ["yellow"] * self.thief_num,
             fill_alpha=0.6)
+        self.rd_agent_text = plt_loc.text(
+            [-1] * self.police_num, [-1] * self.police_num, text=[str(i+1) for i in range(self.police_num)],
+            alpha=0.5, text_font_size="15pt",text_font_style="bold",
+            text_baseline="middle", text_align="center")
 
         # 显示reward趋势
         plt_reward = figure(
@@ -99,12 +103,16 @@ class BallsNotebookRender:
         self.plt_loc.title.text = "step: #{} action: {}".format(current_step, cur_action)
 
         # note： if update frequency too high， jupyter notebook will crash exausted
-        all_x = [_loc[0] for _loc in global_ob['police']] + [_loc[0] for _loc in global_ob['thief']]
-        all_y = [_loc[1] for _loc in global_ob['police']] + [_loc[1] for _loc in global_ob['thief']]
+        agents_x = [_loc[0] for _loc in global_ob['police']]
+        agents_y = [_loc[1] for _loc in global_ob['police']]
+        all_x = agents_x + [_loc[0] for _loc in global_ob['thief']]
+        all_y = agents_y + [_loc[1] for _loc in global_ob['thief']]
         self.rd_loc.data_source.data['x'] = all_x
         self.rd_loc.data_source.data['y'] = all_y
         self.rd_loc.data_source.data['radius'] = [POLICE_RADIUS * self.map_size] * self.police_num + \
                                                  [THIEF_RADIUS * self.map_size] * self.thief_num
+        self.rd_agent_text.data_source.data['x'] = agents_x
+        self.rd_agent_text.data_source.data['y'] = agents_y
 
         # blink when game end
         thief_color = "red" if current_is_caught else "yellow"
