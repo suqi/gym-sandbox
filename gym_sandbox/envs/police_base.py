@@ -83,7 +83,7 @@ class PoliceKillAllEnv(gym.Env):
         if action_type == "discret":
             self.action_space = gym.spaces.Discrete(len(MOVE_ACTIONS))
         elif action_type == "continous":
-            self.action_space = gym.spaces.Box(-np.pi, np.pi, [1])
+            self.action_space = gym.spaces.Box(0, 2*np.pi, [1])  # 2pi is total length of circle
         else:
             self.action_space = None
 
@@ -236,7 +236,7 @@ class PoliceKillAllEnv(gym.Env):
 
     def _police_move_by_continous(self, police_list, police_actions):
         # Accept continous move action, which is more suitable for MADDPG
-        police_actions = np.clip(police_actions, -np.pi, np.pi)
+        police_actions = np.clip(police_actions, 0, 2*np.pi)
 
         police_new_loc = police_list.copy()
         police_speed = self.teams['police']['speed']

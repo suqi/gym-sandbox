@@ -76,7 +76,7 @@ class Actor(object):
             #                      kernel_initializer=init_w, bias_initializer=init_b, name='l2',
             #                      trainable=trainable)
             with tf.variable_scope('a'):
-                actions = tf.layers.dense(l1, self.a_dim, activation=tf.nn.tanh,
+                actions = tf.layers.dense(l1, self.a_dim, activation=tf.nn.sigmoid,
                                           kernel_initializer=init_w,
                                           bias_initializer=init_b, name='a', trainable=trainable)
                 # Scale [-1,1] to [-action_bound ~ action_bound]
@@ -280,10 +280,10 @@ M = Memory(MEMORY_CAPACITY, dims=(state_dim * 2 + action_dim + 1) * AGENT_NUM)
 
 writer = tf.summary.FileWriter("logs/", sess.graph)
 
-var = np.pi/4 #action_bound  # control exploration, w.r.t action_bound
+var = np.pi #action_bound  # control exploration, w.r.t action_bound
 
 for i in range(MAX_EPISODES):
-    if i > 200:
+    if i > 300:
         RENDER = True
 
     x_ma = env.reset()
@@ -292,7 +292,8 @@ for i in range(MAX_EPISODES):
     while True:
         # Add exploration noise
         a_ma = [actor.choose_action(x_ma[actor.agent_id]) for actor in multi_actors]
-        a_ma = np.clip(np.random.normal(a_ma, var), -action_bound, action_bound)    # add randomness to action selection for exploration
+        a_ma = np.random.normal(a_ma, var)    # add randomness to action selection for exploration
+        a_ma = a_ma % (2*np.pi)
         x2_ma, r_ma, done, info = env.step(a_ma)
 
         if RENDER:

@@ -57,7 +57,7 @@ class Actor(object):
                                   kernel_initializer=init_w, bias_initializer=init_b, name='l1',
                                   trainable=trainable)
             with tf.variable_scope('a'):
-                actions = tf.layers.dense(net, self.a_dim, activation=tf.nn.tanh, kernel_initializer=init_w,
+                actions = tf.layers.dense(net, self.a_dim, activation=tf.nn.sigmoid, kernel_initializer=init_w,
                                           bias_initializer=init_b, name='a', trainable=trainable)
                 scaled_a = tf.multiply(actions, self.action_bound, name='scaled_a')  # Scale output to -action_bound to action_bound
         return scaled_a
@@ -218,7 +218,8 @@ for i in range(MAX_EPISODES):
 
         # Add exploration noise
         a = actor.choose_action(s)
-        a = np.clip(np.random.normal(a, var), -action_bound, action_bound)    # add randomness to action selection for exploration
+        a = np.random.normal(a, var)    # add randomness to action selection for exploration
+        a = a % (2*np.pi)
         s_, r, done, info = env.step(a)
 
         M.store_transition(s, a, r / 10, s_)

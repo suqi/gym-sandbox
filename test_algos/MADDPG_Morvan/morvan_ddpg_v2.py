@@ -98,7 +98,7 @@ class DDPG(object):
     def _build_a(self, s, scope, trainable):
         with tf.variable_scope(scope):
             net = tf.layers.dense(s, 200, activation=tf.nn.relu, name='l1', trainable=trainable)
-            a = tf.layers.dense(net, self.a_dim, activation=tf.nn.tanh, name='a', trainable=trainable)
+            a = tf.layers.dense(net, self.a_dim, activation=tf.nn.sigmoid, name='a', trainable=trainable)
             return tf.multiply(a, self.a_bound, name='scaled_a')
 
     def _build_c(self, s, a, scope, trainable):
@@ -133,7 +133,8 @@ for i in range(MAX_EPISODES):
         a = ddpg.choose_action(s)
 
         # this is a noise-like implementation
-        a = np.clip(np.random.normal(a, var), -a_bound, a_bound)    # add randomness to action selection for exploration
+        a = np.random.normal(a, var)    # add randomness to action selection for exploration
+        a = a % (2*np.pi)
 
         s_, r, done, info = env.step(a)
         if RENDER:
