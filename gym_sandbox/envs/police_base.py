@@ -62,7 +62,7 @@ class PoliceKillAllEnv(gym.Env):
 
         # police thief location
         _map_center = int(self.map_size / 2)
-        _police_radius = int(self.map_size * 0.2)
+        _police_radius = int(self.map_size * 0.1)
         self._police_range = _map_center - _police_radius, _map_center + _police_radius
         _thief_radius = int(self.map_size * 0.4)
         self._thief_range = _map_center - _thief_radius, _map_center + _thief_radius
@@ -157,9 +157,9 @@ class PoliceKillAllEnv(gym.Env):
 
     def add_one_thief(self):
         thief_loc = (
-            random.choice([random.randint(1, self._police_range[0]),
-                           random.randint(self._police_range[1], self.map_size)]),
-            random.choice([random.randint(1, self._thief_range[0]),
+            random.choice([random.randint(0, self._thief_range[0]),
+                           random.randint(self._thief_range[1], self.map_size)]),
+            random.choice([random.randint(0, self._thief_range[0]),
                            random.randint(self._thief_range[1], self.map_size)]))
         return thief_loc
 
