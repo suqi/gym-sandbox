@@ -19,15 +19,15 @@ tf.set_random_seed(1)
 
 # -------------------  hyper parameters  -------------------
 MAX_EPISODES = 1000000
-LR_A = 0.01  # learning rate for actor
-LR_C = 0.01  # learning rate for critic
-GAMMA = 0.9  # reward discount
+LR_A = 0.001  # learning rate for actor
+LR_C = 0.001  # learning rate for critic
+GAMMA = 0.95  # reward discount
 # TAU = 0.01  # Soft update for target param, but this is computationally expansive
 # so we use replace_iter instead
 REPLACE_ITER_A = 500  # how many iter to update target
 REPLACE_ITER_C = 300
-MEMORY_CAPACITY = 2000
-BATCH_SIZE = 32
+MEMORY_CAPACITY = 8000
+BATCH_SIZE = 110
 LEARN_HZ = 1  # how frequent to learn
 
 RENDER = False
@@ -64,9 +64,11 @@ class Actor(object):
 
     def _build_actor_net(self, s, scope, trainable):
         with tf.variable_scope(scope):
-            init_w = tf.random_normal_initializer(0., 0.3)
-            init_b = tf.constant_initializer(0.1)
-            n_l1 = 256  # 30
+            # init_w = tf.random_normal_initializer(0., 0.3)
+            # init_b = tf.constant_initializer(0.1)
+            init_w = tf.random_normal_initializer(0., 0.1)
+            init_b = tf.constant_initializer(0)
+            n_l1 = 1000  # 30
             l1 = tf.layers.dense(s, n_l1, activation=tf.nn.relu,
                                  kernel_initializer=init_w, bias_initializer=init_b, name='l1',
                                  trainable=trainable)
@@ -171,7 +173,7 @@ class Critic(object):
             init_b = tf.constant_initializer(0.1)
 
             with tf.variable_scope('l1'):
-                n_l1 = 256  # 30
+                n_l1 = 1000  # 30
                 w1_x = tf.get_variable('w1_x', [self.s_dim * self.agent_num, n_l1], initializer=init_w, trainable=trainable)
                 w1_a = tf.get_variable('w1_a', [self.a_dim * self.agent_num, n_l1], initializer=init_w, trainable=trainable)
                 b1 = tf.get_variable('b1', [1, n_l1], initializer=init_b, trainable=trainable)
@@ -278,7 +280,7 @@ M = Memory(MEMORY_CAPACITY, dims=(state_dim * 2 + action_dim + 1) * AGENT_NUM)
 
 writer = tf.summary.FileWriter("logs/", sess.graph)
 
-var = 3 #action_bound  # control exploration, w.r.t action_bound
+var = np.pi/4 #action_bound  # control exploration, w.r.t action_bound
 
 for i in range(MAX_EPISODES):
     if i > 200:
