@@ -50,5 +50,23 @@ class PoliceMADDPGEnv(PoliceKillOneEnv):
     # so that it allows an different reward for different agent
     # but for simplicity here we return a single same reward for all agent
     def _cal_reward(self, kill_num, is_done):
+
         reward = super()._cal_reward(kill_num, is_done)
-        return np.array([[reward] for _ in range(self.agent_num)])
+        rewards = np.array([[reward] for _ in range(self.agent_num)]).astype(np.float)
+
+        if not is_done:
+
+            # if not done, add up dist reward to help boost
+            thief_list = self.current_state['thief']
+            police_list = self.current_state['police']
+
+            max_dist = self.map_size * np.sqrt(2) * len(thief_list)  # for normalize
+
+            for _i in range(self.agent_num):
+                _p = police_list[_i]
+                _all_dist = sum([self.calc_dist(_p, _t) for _t in thief_list])
+                _dist_reward = 0.9 - _all_dist/max_dist
+
+                rewards[_i] += _dist_reward
+
+        return rewards
