@@ -142,11 +142,6 @@ class PoliceKillAllEnv(gym.Env):
         self.reward_hist.append(reward)
         return reward
 
-    def _cal_dist(self):
-        x_dist = self.current_state.player.base.x - self.current_state.npc[0].x
-        y_dist = self.current_state.player.base.y - self.current_state.npc[0].y
-        return np.sqrt(np.square(x_dist) + np.square(y_dist))
-
     def _cal_done(self, state, kill_num):
         all_killed = len(state["thief"]) == 0
         _pass_step_limit = self.elapsed_steps >= self.spec.max_episode_steps
