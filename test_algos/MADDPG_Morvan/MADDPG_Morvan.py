@@ -19,15 +19,15 @@ tf.set_random_seed(1)
 
 # -------------------  hyper parameters  -------------------
 MAX_EPISODES = 1000000
-LR_A = 0.001  # learning rate for actor
+LR_A = 0.0001  # learning rate for actor
 LR_C = 0.001  # learning rate for critic
 GAMMA = 0.95  # reward discount
-# TAU = 0.01  # Soft update for target param, but this is computationally expansive
+TAU = 0.01  # Soft update for target param, but this is computationally expansive
 # so we use replace_iter instead
 REPLACE_ITER_A = 500  # how many iter to update target
 REPLACE_ITER_C = 300
-MEMORY_CAPACITY = 8000
-BATCH_SIZE = 110
+MEMORY_CAPACITY = 6000
+BATCH_SIZE = 50
 LEARN_HZ = 1  # how frequent to learn
 
 RENDER = False
@@ -68,15 +68,15 @@ class Actor(object):
             # init_b = tf.constant_initializer(0.1)
             init_w = tf.random_normal_initializer(0., 0.1)
             init_b = tf.constant_initializer(0)
-            n_l1 = 1000  # 30
+            n_l1 = 1000
             l1 = tf.layers.dense(s, n_l1, activation=tf.nn.relu,
                                  kernel_initializer=init_w, bias_initializer=init_b, name='l1',
                                  trainable=trainable)
-            # l2 = tf.layers.dense(l1, 256, activation=tf.nn.relu,
-            #                      kernel_initializer=init_w, bias_initializer=init_b, name='l2',
-            #                      trainable=trainable)
+            l2 = tf.layers.dense(l1, 64, #activation=tf.nn.relu,
+                                 kernel_initializer=init_w, bias_initializer=init_b, name='l2',
+                                 trainable=trainable)
             with tf.variable_scope('a'):
-                actions = tf.layers.dense(l1, self.a_dim, activation=tf.nn.sigmoid,
+                actions = tf.layers.dense(l2, self.a_dim, activation=tf.nn.sigmoid,
                                           kernel_initializer=init_w,
                                           bias_initializer=init_b, name='a', trainable=trainable)
                 # Scale [-1,1] to [-action_bound ~ action_bound]
@@ -173,17 +173,17 @@ class Critic(object):
             init_b = tf.constant_initializer(0.1)
 
             with tf.variable_scope('l1'):
-                n_l1 = 1000  # 30
+                n_l1 = 2000  # 30
                 w1_x = tf.get_variable('w1_x', [self.s_dim * self.agent_num, n_l1], initializer=init_w, trainable=trainable)
                 w1_a = tf.get_variable('w1_a', [self.a_dim * self.agent_num, n_l1], initializer=init_w, trainable=trainable)
                 b1 = tf.get_variable('b1', [1, n_l1], initializer=init_b, trainable=trainable)
                 l1 = tf.nn.relu(tf.matmul(x_ma, w1_x) + tf.matmul(a_ma, w1_a) + b1)
-                # l2 = tf.layers.dense(l1, 256, activation=tf.nn.relu,
-                #                      kernel_initializer=init_w, bias_initializer=init_b, name='l2',
-                #                      trainable=trainable)
+                l2 = tf.layers.dense(l1, 64, #activation=tf.nn.relu,
+                                     kernel_initializer=init_w, bias_initializer=init_b, name='l2',
+                                     trainable=trainable)
 
             with tf.variable_scope('q'):
-                q = tf.layers.dense(l1, 1, kernel_initializer=init_w, bias_initializer=init_b, trainable=trainable)   # Q(s,a)
+                q = tf.layers.dense(l2, 1, kernel_initializer=init_w, bias_initializer=init_b, trainable=trainable)   # Q(s,a)
         return q
 
     def learn_critic(self, x_ma, a_ma, r, x2_ma, s, a, s2, epoch=0):
@@ -283,7 +283,7 @@ writer = tf.summary.FileWriter("logs/", sess.graph)
 var = np.pi #action_bound  # control exploration, w.r.t action_bound
 
 for i in range(MAX_EPISODES):
-    if i > 1000:
+    if i > 1000 or var <=0.2:
         RENDER = True
 
     x_ma = env.reset()
@@ -303,7 +303,7 @@ for i in range(MAX_EPISODES):
         M.store_transition(x_ma, a_ma, r_ma, x2_ma)
 
         if M.pointer > MEMORY_CAPACITY and M.pointer % LEARN_HZ == 0:
-            var *= .9995    # decay the action randomness
+            var *= 0.99998 #0.999998    # decay the action randomness
             b_M = M.sample(BATCH_SIZE)
 
             _x_len = state_dim * AGENT_NUM
