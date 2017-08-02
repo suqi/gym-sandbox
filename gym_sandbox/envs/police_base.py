@@ -37,7 +37,7 @@ class PoliceKillAllEnv(gym.Env):
         agent_team: police/thief
         state_format: grid3d/grid3d_ravel/cord_list_unfixed/cord_list_fixed_500
         adversary_action: static/simple/random
-        action_type: discret/continous
+        action_type: discret/continous_angle/continous_vector
         Note: for simplicity, the map is a square
         """
         self.teams = {
@@ -82,7 +82,9 @@ class PoliceKillAllEnv(gym.Env):
         # depends on some self.**** variables, so put it at the end of the code block.
         if action_type == "discret":
             self.action_space = gym.spaces.Discrete(len(MOVE_ACTIONS))
-        elif action_type == "continous":
+        elif action_type == "continous_angle":
+            self.action_space = gym.spaces.Box(0, 2*np.pi, [1])  # 2pi is total length of circle
+        elif action_type == "continous_vector":
             self.action_space = gym.spaces.Box(0, 2*np.pi, [1])  # 2pi is total length of circle
         else:
             self.action_space = None
@@ -205,7 +207,8 @@ class PoliceKillAllEnv(gym.Env):
         # police_new_loc = [
         # self._take_simple_action(_police, thief_list, team="police") for _police in police_list]
         _move_func = self._police_move_by_discret if self.action_type == 'discret' \
-            else self._police_move_by_continous
+            else self._police_move_by_continous_angle if self.action_type == 'continous_angle' \
+            else self._police_move_by_continous_vector
         police_new_loc = _move_func(police_list, police_actions)
 
         new_state['thief'] = thief_new_loc
@@ -229,8 +232,24 @@ class PoliceKillAllEnv(gym.Env):
 
         return police_new_loc
 
-    def _police_move_by_continous(self, police_list, police_actions):
+    def _police_move_by_continous_vector(self, police_list, police_actions):
+        """accept vector [x, y], both -1~1, fixed length"""
+        police_new_loc = police_list.copy()
+        police_speed = self.teams['police']['speed']
+        for _i, _a in enumerate(police_actions):
+            action_dir = np.array(_a).astype(np.float)
+            if np.all(action_dir != 0):  # allow 0,0 which means don't move
+                _norm_dir = action_dir / np.sqrt(np.sum(action_dir ** 2))  # a excircle
+                police_dir = _norm_dir * police_speed
+                _p = np.array(police_list[_i]) + police_dir
+                _p = self.ensure_inside(_p)
+                police_new_loc[_i] = _p
+
+        return police_new_loc
+
+    def _police_move_by_continous_angle(self, police_list, police_actions):
         # Accept continous move action, which is more suitable for MADDPG
+        # move angle (0~2pi)
         police_actions = np.clip(police_actions, 0, 2*np.pi)
 
         police_new_loc = police_list.copy()

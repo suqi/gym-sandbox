@@ -8,7 +8,7 @@ import time
 # env = gym.make("police-killall-static-cords-500-v0")
 # env = gym.make("police-killall-trigger-3dravel-v0")
 # env = gym.make("police-bokeh-server-v0")
-env = gym.make("police-maddpg-continous-v0")
+env = gym.make("police-maddpg-continous-vector-v0")
 
 env.env.init_params(show_dashboard=True, bokeh_output="standalone")
 
@@ -20,7 +20,7 @@ print("state shape >>> ", s_init.shape)
 
 for i in range(10):
     # choose your action
-    a = [0.29561196]  # 1
+    a = [[1, 1], [-1,-1], [0,0]]  # 1
     s_, r, done, info = env.step(a)
 
     env.render()
