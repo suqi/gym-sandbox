@@ -100,7 +100,7 @@ class BallsNotebookRender:
         self.police_num = len(global_ob['police'])
         self.thief_num = len(global_ob['thief'])
 
-        self.plt_loc.title.text = "step: #{} action: {}".format(current_step, cur_action)
+        self.plt_loc.title.text = "step: #{} action: {}".format(current_step,  np.around(cur_action, decimals=1))
 
         # note： if update frequency too high， jupyter notebook will crash exausted
         agents_x = [_loc[0] for _loc in global_ob['police']]
