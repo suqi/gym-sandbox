@@ -85,7 +85,7 @@ class PoliceKillAllEnv(gym.Env):
         elif action_type == "continous_angle":
             self.action_space = gym.spaces.Box(0, 2*np.pi, [1])  # 2pi is total length of circle
         elif action_type == "continous_vector":
-            self.action_space = gym.spaces.Box(0, 2*np.pi, [1])  # 2pi is total length of circle
+            self.action_space = gym.spaces.Box(-1, 1, [2])  # 2pi is total length of circle
         else:
             self.action_space = None
 
