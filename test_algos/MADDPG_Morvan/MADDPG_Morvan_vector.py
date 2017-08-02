@@ -19,7 +19,7 @@ tf.set_random_seed(1)
 
 # -------------------  hyper parameters  -------------------
 MAX_EPISODES = 1000000
-LR_A = 0.0001  # learning rate for actor
+LR_A = 0.0005  # learning rate for actor
 LR_C = 0.001  # learning rate for critic
 GAMMA = 0.95  # reward discount
 TAU = 0.01  # Soft update for target param, but this is computationally expansive
@@ -27,10 +27,15 @@ TAU = 0.01  # Soft update for target param, but this is computationally expansiv
 REPLACE_ITER_A = 500  # how many iter to update target
 REPLACE_ITER_C = 300
 MEMORY_CAPACITY = 6000
-BATCH_SIZE = 50
+BATCH_SIZE = 30
 LEARN_HZ = 1  # how frequent to learn
 
+var = 1  # control exploration, w.r.t action_bound
+var_decay = 0.9998 #0.999998    # decay the action randomness
+
 RENDER = False
+start_render_ep = 500
+
 ENV_NAME = 'police-maddpg-continous-vector-v0'
 
 
@@ -280,11 +285,16 @@ M = Memory(MEMORY_CAPACITY, dims=(state_dim * 2 + action_dim + 1) * AGENT_NUM)
 
 writer = tf.summary.FileWriter("logs/", sess.graph)
 
-var = action_bound  # control exploration, w.r.t action_bound
+saver = tf.train.Saver()
+# saver.restore(sess, 'tf-models/maddpg-vector-best')
+
 
 for i in range(MAX_EPISODES):
-    if i > 1000 or var <=0.2:
+    if i > start_render_ep or var <=0.2:
         RENDER = True
+
+    if i % 501 == 0:
+        saver.save(sess, ".tf-models/maddpg-vector", global_step=i)
 
     x_ma = env.reset()
     ep_reward = 0
@@ -302,7 +312,7 @@ for i in range(MAX_EPISODES):
         M.store_transition(x_ma, a_ma, r_ma, x2_ma)
 
         if M.pointer > MEMORY_CAPACITY and M.pointer % LEARN_HZ == 0:
-            var *= 0.99998 #0.999998    # decay the action randomness
+            var *= var_decay
             b_M = M.sample(BATCH_SIZE)
 
             _x_len = state_dim * AGENT_NUM
