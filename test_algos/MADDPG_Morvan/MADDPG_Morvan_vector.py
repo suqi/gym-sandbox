@@ -27,14 +27,14 @@ TAU = 0.01  # Soft update for target param, but this is computationally expansiv
 REPLACE_ITER_A = 500  # how many iter to update target
 REPLACE_ITER_C = 300
 MEMORY_CAPACITY = 6000
-BATCH_SIZE = 30
+BATCH_SIZE = 20
 LEARN_HZ = 1  # how frequent to learn
 
 var = 1  # control exploration, w.r.t action_bound
-var_decay = 0.9998 #0.999998    # decay the action randomness
+var_decay = 0.99998 #0.999998    # decay the action randomness
 
 RENDER = False
-start_render_ep = 1000
+start_render_ep = 50000
 
 ENV_NAME = 'police-maddpg-continous-vector-v0'
 
@@ -73,15 +73,17 @@ class Actor(object):
             # init_b = tf.constant_initializer(0.1)
             init_w = tf.random_normal_initializer(0., 0.1)
             init_b = tf.constant_initializer(0)
-            n_l1 = 1000
-            l1 = tf.layers.dense(s, n_l1, activation=tf.nn.relu,
-                                 kernel_initializer=init_w, bias_initializer=init_b, name='l1',
+            l = tf.layers.dense(s, 1000, activation=tf.nn.relu,
+                                 kernel_initializer=init_w, bias_initializer=init_b,
                                  trainable=trainable)
-            l2 = tf.layers.dense(l1, 64, #activation=tf.nn.relu,
-                                 kernel_initializer=init_w, bias_initializer=init_b, name='l2',
+            l = tf.layers.dense(l, 500, activation=tf.nn.relu,
+                                 kernel_initializer=init_w, bias_initializer=init_b,
+                                 trainable=trainable)
+            l = tf.layers.dense(l, 200, activation=tf.nn.relu,
+                                 kernel_initializer=init_w, bias_initializer=init_b,
                                  trainable=trainable)
             with tf.variable_scope('a'):
-                actions = tf.layers.dense(l2, self.a_dim, activation=tf.nn.tanh,
+                actions = tf.layers.dense(l, self.a_dim, activation=tf.nn.tanh,
                                           kernel_initializer=init_w,
                                           bias_initializer=init_b, name='a', trainable=trainable)
                 # Scale [-1,1] to [-action_bound ~ action_bound]
@@ -182,13 +184,19 @@ class Critic(object):
                 w1_x = tf.get_variable('w1_x', [self.s_dim * self.agent_num, n_l1], initializer=init_w, trainable=trainable)
                 w1_a = tf.get_variable('w1_a', [self.a_dim * self.agent_num, n_l1], initializer=init_w, trainable=trainable)
                 b1 = tf.get_variable('b1', [1, n_l1], initializer=init_b, trainable=trainable)
-                l1 = tf.nn.relu(tf.matmul(x_ma, w1_x) + tf.matmul(a_ma, w1_a) + b1)
-                l2 = tf.layers.dense(l1, 64, #activation=tf.nn.relu,
-                                     kernel_initializer=init_w, bias_initializer=init_b, name='l2',
+                l = tf.nn.relu(tf.matmul(x_ma, w1_x) + tf.matmul(a_ma, w1_a) + b1)
+                l = tf.layers.dense(l, 1000, activation=tf.nn.relu,
+                                     kernel_initializer=init_w, bias_initializer=init_b,
+                                     trainable=trainable)
+                l = tf.layers.dense(l, 500, activation=tf.nn.relu,
+                                     kernel_initializer=init_w, bias_initializer=init_b,
+                                     trainable=trainable)
+                l = tf.layers.dense(l, 200, activation=tf.nn.relu,
+                                     kernel_initializer=init_w, bias_initializer=init_b,
                                      trainable=trainable)
 
             with tf.variable_scope('q'):
-                q = tf.layers.dense(l2, 1, kernel_initializer=init_w, bias_initializer=init_b, trainable=trainable)   # Q(s,a)
+                q = tf.layers.dense(l, 1, kernel_initializer=init_w, bias_initializer=init_b, trainable=trainable)   # Q(s,a)
         return q
 
     def learn_critic(self, x_ma, a_ma, r, x2_ma, s, a, s2, epoch=0):
@@ -286,7 +294,7 @@ M = Memory(MEMORY_CAPACITY, dims=(state_dim * 2 + action_dim + 1) * AGENT_NUM)
 writer = tf.summary.FileWriter("logs/", sess.graph)
 
 saver = tf.train.Saver()
-saver.restore(sess, '.tf-models/maddpg-vector-3006')
+saver.restore(sess, '.tf-models/maddpg-vector-1503-501')
 
 
 for i in range(MAX_EPISODES):
