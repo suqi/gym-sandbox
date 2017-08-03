@@ -70,3 +70,18 @@ class PoliceMADDPGEnv(PoliceKillOneEnv):
                 rewards[_i] += _dist_reward
 
         return rewards
+
+    def _get_avail_new_loc(self, my_pos, my_speed):
+        """as it get easier for multiagent to catch, we need to make thief stronger"""
+        # stop or eight direction, it's A33 of [0,1,-1]
+        new_loc = np.array([
+            (0, 0), (0, 1), (0, -1), (1, 0), (-1, 0), (1, 1), (1, -1), (-1, 1), (-1,-1)
+        ]) * my_speed  + np.array(my_pos)
+
+        new_loc = [self.ensure_inside(_l) for _l in new_loc]
+        return new_loc
+
+    # make thief smarter, keep away only from the nearest one
+    def get_position_rating(self, my_new_pos, adversary_list):
+        all_dist = [self.calc_dist(my_new_pos, _ad) for _ad in adversary_list]
+        return min(all_dist)
