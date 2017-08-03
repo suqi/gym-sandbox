@@ -260,7 +260,7 @@ register(
 
     kwargs=dict(
         agent_num=3, agent_team="police", adversary_num=1, map_size=10, adversary_action="simple",
-        state_format='cord_list_unfixed', police_speed=0.5, thief_speed=1, min_catch_dist=1,
+        state_format='cord_list_unfixed', police_speed=0.5, thief_speed=1, min_catch_dist=0.5,
         action_type='continous_vector'
     )
 )

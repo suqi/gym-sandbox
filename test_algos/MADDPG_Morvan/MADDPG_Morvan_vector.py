@@ -34,7 +34,7 @@ var = 1  # control exploration, w.r.t action_bound
 var_decay = 0.9998 #0.999998    # decay the action randomness
 
 RENDER = False
-start_render_ep = 500
+start_render_ep = 1000
 
 ENV_NAME = 'police-maddpg-continous-vector-v0'
 
@@ -286,11 +286,11 @@ M = Memory(MEMORY_CAPACITY, dims=(state_dim * 2 + action_dim + 1) * AGENT_NUM)
 writer = tf.summary.FileWriter("logs/", sess.graph)
 
 saver = tf.train.Saver()
-# saver.restore(sess, 'tf-models/maddpg-vector-best')
+saver.restore(sess, '.tf-models/maddpg-vector-3006')
 
 
 for i in range(MAX_EPISODES):
-    if i > start_render_ep or var <=0.2:
+    if i > start_render_ep or var <=0.05:
         RENDER = True
 
     if i % 501 == 0:
