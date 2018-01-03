@@ -1,6 +1,7 @@
 # gym-sandbox
 - Customize your own gym environment to simulate any RL problem you want to solve.
 - Principle: don't introduce any complexity, focus on algo test!
+- Similar project: https://github.com/deepmind/pycolab
 
 ## How to use
 1. git clone this repo
